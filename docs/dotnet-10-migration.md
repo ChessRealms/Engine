@@ -1,7 +1,7 @@
 # .NET 10 migration
 
 > Repository organization note: the solution now lives at the repository root
-> as `ChessRealms.ChessEngine.slnx`.
+> as `ChessRealms.Engine.slnx`.
 > Commands and results below preserve the paths used at the time of validation.
 > See [CONTRIBUTING.md](../CONTRIBUTING.md) for current commands.
 

@@ -1,4 +1,4 @@
-﻿using ChessRealms.ChessEngine.Core.Attacks;
+using ChessRealms.Engine.Core.Attacks;
 using System.Numerics;
 
 namespace ChessRealms.MagicBruteforce;
