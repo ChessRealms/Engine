@@ -8,7 +8,7 @@ No files are changed. Git must be available on PATH.
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$solutionPath = Join-Path $repositoryRoot 'ChessRealms.ChessEngine.slnx'
+$solutionPath = Join-Path $repositoryRoot 'ChessRealms.Engine.slnx'
 $issues = [Collections.Generic.List[string]]::new()
 
 function Normalize-RelativePath([string] $Path) {
@@ -84,7 +84,7 @@ function Compare-References($Expected, $Actual, [string] $Kind) {
 }
 
 try {
-    if ([IO.File]::Exists((Join-Path $repositoryRoot 'ChessRealms.ChessEngine.sln'))) {
+    if ([IO.File]::Exists((Join-Path $repositoryRoot 'ChessRealms.Engine.sln'))) {
         $issues.Add('Legacy .sln remains beside .slnx; keep a single root solution for CLI discovery.')
     }
     # NUL-delimited output preserves spaces, Unicode and Git's otherwise quoted names.

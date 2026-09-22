@@ -22,7 +22,7 @@ is rejected when promotion is required. There is no implicit queen. A suffix on
 an ordinary move, e.g. `e2e4q`, is also rejected by the game.
 
 ```csharp
-using ChessRealms.ChessEngine;
+using ChessRealms.Engine;
 
 var game = new ChessGame();
 var legalMoves = game.GetLegalMoves(); // read-only snapshot, initially 20
@@ -121,7 +121,7 @@ not a history/outcome serialization format.
 ## FEN import and export
 
 ```csharp
-using ChessRealms.ChessEngine.Parsing;
+using ChessRealms.Engine.Parsing;
 
 if (ChessGame.TryCreateFromFen("7k/P7/8/8/8/8/8/7K w - - 0 1", out var promotionGame))
 {

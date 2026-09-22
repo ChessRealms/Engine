@@ -1,7 +1,7 @@
 # Game-rules validation — 2026-09-10
 
 > Repository organization note: the solution now lives at the repository root
-> as `ChessRealms.ChessEngine.slnx`.
+> as `ChessRealms.Engine.slnx`.
 > Commands and results below preserve the paths used at the time of validation.
 > See [CONTRIBUTING.md](../CONTRIBUTING.md) for current commands.
 
@@ -14,10 +14,10 @@ Local environment: Windows, .NET SDK **10.0.401**, Release configuration.
 
 | Check | Result |
 | --- | --- |
-| `dotnet restore src/ChessRealms.ChessEngine.sln --locked-mode` | Passed; no lock-file changes |
-| `dotnet build src/ChessRealms.ChessEngine.sln -c Release --no-restore` | Passed; all six projects, 0 warnings, 0 errors |
-| `dotnet test src/ChessRealms.ChessEngine.sln -c Release --no-build --filter "TestCategory!=Deep"` | 1010 passed, 0 failed, 0 skipped |
-| `dotnet test src/ChessRealms.ChessEngine.sln -c Release --no-build --filter "TestCategory=Deep"` | 16 passed, 0 failed, 0 skipped; 29 seconds |
+| `dotnet restore src/ChessRealms.Engine.sln --locked-mode` | Passed; no lock-file changes |
+| `dotnet build src/ChessRealms.Engine.sln -c Release --no-restore` | Passed; all six projects, 0 warnings, 0 errors |
+| `dotnet test src/ChessRealms.Engine.sln -c Release --no-build --filter "TestCategory!=Deep"` | 1010 passed, 0 failed, 0 skipped |
+| `dotnet test src/ChessRealms.Engine.sln -c Release --no-build --filter "TestCategory=Deep"` | 16 passed, 0 failed, 0 skipped; 29 seconds |
 | Console scripted smoke | Passed: legal moves, invalid draw claim, Fool's Mate, explicit Black winner, terminal rejection, undo, exact FEN |
 | `git diff --check` | Passed |
 

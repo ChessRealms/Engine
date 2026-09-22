@@ -1,0 +1,34 @@
+<Solution>
+  <Folder Name="/docs/" Id="a576d511-a7dd-48da-89d2-a534742656e6">
+    <File Path="docs/dotnet-10-migration.md" />
+    <File Path="docs/game-rules-api.md" />
+    <File Path="docs/game-rules-validation.md" />
+    <File Path="docs/known-issues.md" />
+  </Folder>
+  <Folder Name="/scripts/" Id="9f3eeaa3-c0d2-4d93-af81-f93234779361">
+    <File Path="scripts/Verify-SolutionStructure.ps1" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
+    <File Path="CONTRIBUTING.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="global.json" />
+    <File Path="LICENSE.txt" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution Items/.github/" />
+  <Folder Name="/Solution Items/.github/workflows/">
+    <File Path=".github/workflows/ci.yml" />
+  </Folder>
+  <Folder Name="/src/" Id="7cc56138-8080-42ef-beb6-c075dac09fd8">
+    <Project Path="src/ChessRealms.Engine.Benchmark/ChessRealms.Engine.Benchmark.csproj" />
+    <Project Path="src/ChessRealms.Engine.Console/ChessRealms.Engine.Console.csproj" />
+    <Project Path="src/ChessRealms.Engine.Perft/ChessRealms.Engine.Perft.csproj" />
+    <Project Path="src/ChessRealms.Engine.Tests/ChessRealms.Engine.Tests.csproj" />
+    <Project Path="src/ChessRealms.Engine/ChessRealms.Engine.csproj" />
+    <Project Path="src/ChessRealms.MagicBruteforce/ChessRealms.MagicBruteforce.csproj" Id="5c55e3ca-2541-4ea4-b4b6-3c5aae87fb9d" />
+  </Folder>
+</Solution>
