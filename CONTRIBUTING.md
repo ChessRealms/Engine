@@ -10,10 +10,10 @@ Run these commands from the repository root:
 
 ```sh
 pwsh -NoProfile -File scripts/Verify-SolutionStructure.ps1
-dotnet sln ChessRealms.ChessEngine.slnx list
-dotnet restore ChessRealms.ChessEngine.slnx --locked-mode
-dotnet build ChessRealms.ChessEngine.slnx -c Release --no-restore
-dotnet test ChessRealms.ChessEngine.slnx -c Release --no-build --filter "TestCategory!=Deep"
+dotnet sln ChessRealms.Engine.slnx list
+dotnet restore ChessRealms.Engine.slnx --locked-mode
+dotnet build ChessRealms.Engine.slnx -c Release --no-restore
+dotnet test ChessRealms.Engine.slnx -c Release --no-build --filter "TestCategory!=Deep"
 git diff --check
 ```
 
@@ -30,7 +30,7 @@ local results; do not infer a CI, Linux, or Visual Studio pass from them.
 
 ## Repository and solution structure
 
-- `ChessRealms.ChessEngine.slnx`: the root solution in XML `.slnx` format.
+- `ChessRealms.Engine.slnx`: the root solution in XML `.slnx` format.
 - `src/`: six projects (engine, tests, console, perft runner, benchmarks, and
   magic-number search). Each project stays in its own physical directory.
 - `docs/`: API documentation, support boundaries, and historical validation records.
@@ -76,7 +76,7 @@ the root and do not need entries in `docs`.
 ## Namespaces and project names
 
 `ChessRealms` is the organization prefix, matching the configured GitHub origin
-`ChessRealms/ChessEngine`. `ChessRealms.ChessEngine` identifies the library;
+`ChessRealms/Engine`. `ChessRealms.Engine` identifies the library;
 suffixes such as `.Tests`, `.Console`, `.Perft`, and `.Benchmark` identify related
 projects by purpose. `ChessRealms.MagicBruteforce` is a supporting tool under the
 same organization. This follows the

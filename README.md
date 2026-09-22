@@ -1,4 +1,4 @@
-# ChessEngine
+# Engine
 
 Chess engine with bitboard representation. The core library has no external package
 dependencies. All six projects target .NET 10.
@@ -15,9 +15,9 @@ Run from the repository root:
 ```sh
 dotnet --version
 pwsh -NoProfile -File scripts/Verify-SolutionStructure.ps1
-dotnet restore ChessRealms.ChessEngine.slnx --locked-mode
-dotnet build ChessRealms.ChessEngine.slnx --configuration Release --no-restore
-dotnet test ChessRealms.ChessEngine.slnx --configuration Release --no-build --filter "TestCategory!=Deep"
+dotnet restore ChessRealms.Engine.slnx --locked-mode
+dotnet build ChessRealms.Engine.slnx --configuration Release --no-restore
+dotnet test ChessRealms.Engine.slnx --configuration Release --no-build --filter "TestCategory!=Deep"
 ```
 
 For the ordinary developer loop, run `dotnet test` from the repository root.
@@ -29,7 +29,7 @@ The existing filters and NUnit `Explicit` behavior are unchanged.
 Committed `packages.lock.json` files pin direct and transitive package versions
 and content hashes. CI uses `--locked-mode` to reject dependency drift. When
 intentionally updating packages, run
-`dotnet restore ChessRealms.ChessEngine.slnx --force-evaluate`, review the
+`dotnet restore ChessRealms.Engine.slnx --force-evaluate`, review the
 lock-file changes, and repeat the checks above. When updating the SDK, update
 `global.json` and this README together, then regenerate/review the lock files with
 that SDK. Restore requires access to NuGet.org or a cache containing the locked packages.
@@ -46,7 +46,7 @@ that SDK. Restore requires access to NuGet.org or a cache containing the locked 
   opt-in for cost, not failing tests being suppressed. Select them explicitly:
 
 ```sh
-dotnet test ChessRealms.ChessEngine.slnx --configuration Release --no-build --filter "TestCategory=Deep"
+dotnet test ChessRealms.Engine.slnx --configuration Release --no-build --filter "TestCategory=Deep"
 ```
 
 Run both test commands after the Release build, which compiles all tests. Tests,
@@ -61,7 +61,7 @@ that either GitHub Actions job has passed.
 Optional coverage check using the existing VSTest collector:
 
 ```sh
-dotnet test ChessRealms.ChessEngine.slnx -c Release --no-build --filter "TestCategory!=Deep" --collect:"XPlat Code Coverage"
+dotnet test ChessRealms.Engine.slnx -c Release --no-build --filter "TestCategory!=Deep" --collect:"XPlat Code Coverage"
 ```
 
 ### Tool smoke checks
@@ -69,10 +69,10 @@ dotnet test ChessRealms.ChessEngine.slnx -c Release --no-build --filter "TestCat
 After the Release build, run from the repository root:
 
 ```sh
-dotnet run --project src/ChessRealms.ChessEngine.Perft -c Release --no-build
+dotnet run --project src/ChessRealms.Engine.Perft -c Release --no-build
 dotnet run --project src/ChessRealms.MagicBruteforce -c Release --no-build --no-launch-profile -- 42 1
-dotnet run --project src/ChessRealms.ChessEngine.Benchmark -c Release --no-build -- --job Dry --inProcess --filter "*StartPos_Depth_6*" --wakeLock None
-dotnet run --project src/ChessRealms.ChessEngine.Console -c Release --no-build
+dotnet run --project src/ChessRealms.Engine.Benchmark -c Release --no-build -- --job Dry --inProcess --filter "*StartPos_Depth_6*" --wakeLock None
+dotnet run --project src/ChessRealms.Engine.Console -c Release --no-build
 ```
 
 Perft runs the initial position at depth 6: expect **119,060,324 nodes**.
@@ -139,7 +139,7 @@ See [the complete API guide](docs/game-rules-api.md) for contracts, FEN validati
 FIDE draw rules, compatibility changes and exact dead-position detection limits.
 
 ```csharp
-using ChessRealms.ChessEngine;
+using ChessRealms.Engine;
 
 var game = new ChessGame();
 var moves = game.GetLegalMoves();            // read-only snapshot, initially 20

@@ -23,8 +23,8 @@ jobs:
         shell: pwsh
         run: ./scripts/Verify-SolutionStructure.ps1
       - name: Restore
-        run: dotnet restore ChessRealms.ChessEngine.slnx --locked-mode
+        run: dotnet restore ChessRealms.Engine.slnx --locked-mode
       - name: Release build
-        run: dotnet build ChessRealms.ChessEngine.slnx --configuration Release --no-restore
+        run: dotnet build ChessRealms.Engine.slnx --configuration Release --no-restore
       - name: Fast tests
-        run: dotnet test ChessRealms.ChessEngine.slnx --configuration Release --no-build --filter "TestCategory!=Deep"
+        run: dotnet test ChessRealms.Engine.slnx --configuration Release --no-build --filter "TestCategory!=Deep"
