@@ -1,5 +1,3 @@
-using ChessRealms.Engine.Parsing;
-
 namespace ChessRealms.Engine;
 
 /// <summary>A square on a standard chess board.</summary>
@@ -25,14 +23,11 @@ public readonly record struct Square
     /// <summary>Tries to parse a lowercase square name from <c>a1</c> through <c>h8</c>.</summary>
     public static bool TryParse(ReadOnlySpan<char> text, out Square square)
     {
-        if (AlgebraicNotation.TryParseSquare(text, out int index))
-        {
-            square = new(index);
-            return true;
-        }
-
         square = default;
-        return false;
+        if (text.Length != 2 || text[0] is < 'a' or > 'h' || text[1] is < '1' or > '8') return false;
+
+        square = new((text[1] - '1') * 8 + text[0] - 'a');
+        return true;
     }
 
     /// <inheritdoc />

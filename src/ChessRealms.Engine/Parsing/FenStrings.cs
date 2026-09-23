@@ -71,8 +71,9 @@ internal static class FenStrings
         }
         if (fields[3] != "-")
         {
-            if (!AlgebraicNotation.TryParseSquare(fields[3], out candidate.enpassant)
+            if (!Square.TryParse(fields[3], out var enPassant)
                 || fields[3][1] is not ('3' or '6')) return false;
+            candidate.enpassant = enPassant.Index;
         }
         if (!TryCounter(fields[4], out candidate.halfMoveClock)
             || !TryCounter(fields[5], out candidate.fullMoveCount) || candidate.fullMoveCount == 0) return false;

@@ -1,6 +1,4 @@
-using ChessRealms.Engine.Core.Constants;
 using ChessRealms.Engine.Core.Math;
-using ChessRealms.Engine.Parsing;
 
 namespace ChessRealms.Engine;
 
@@ -36,11 +34,33 @@ public readonly record struct CoordinateMove
         && Promotion is PieceValue.None or PieceValue.Queen or PieceValue.Rook or PieceValue.Bishop or PieceValue.Knight;
 
     /// <summary>Parses lowercase long algebraic/coordinate notation such as <c>e2e4</c> or <c>a7a8q</c>.</summary>
-    public static CoordinateMove Parse(ReadOnlySpan<char> text) => AlgebraicNotation.ParseCoordinateMove(text);
+    public static CoordinateMove Parse(ReadOnlySpan<char> text)
+        => TryParse(text, out var move) ? move : throw new FormatException("Expected e2e4 or a7a8q/r/b/n.");
 
     /// <summary>Tries to parse lowercase long algebraic/coordinate notation.</summary>
     public static bool TryParse(ReadOnlySpan<char> text, out CoordinateMove move)
-        => AlgebraicNotation.TryParseCoordinateMove(text, out move);
+    {
+        move = default;
+        if (text.Length is not (4 or 5) || !Square.TryParse(text[..2], out var source)
+            || !Square.TryParse(text.Slice(2, 2), out var target) || source == target) return false;
+
+        PieceValue promotion = PieceValue.None;
+        if (text.Length == 5)
+        {
+            promotion = text[4] switch
+            {
+                'q' => PieceValue.Queen,
+                'r' => PieceValue.Rook,
+                'b' => PieceValue.Bishop,
+                'n' => PieceValue.Knight,
+                _ => PieceValue.None
+            };
+            if (promotion == PieceValue.None) return false;
+        }
+
+        move = new(source, target, promotion);
+        return true;
+    }
 
     /// <inheritdoc />
     public override string ToString() => !IsValid ? string.Empty :

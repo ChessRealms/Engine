@@ -12,7 +12,7 @@ internal class ChessGameTests
     }
 
     private static void AssertPiece(ChessPiece[] board, string square, PieceColor color, PieceValue value)
-        => Assert.That(board[AlgebraicNotation.ParseSquare(square)], Is.EqualTo(new ChessPiece(color, value)));
+        => Assert.That(board[Square.Parse(square).Index], Is.EqualTo(new ChessPiece(color, value)));
 
     [Test]
     public void NewGame_HasCompleteInitialBoardAndWhiteToMove()
@@ -60,12 +60,12 @@ internal class ChessGameTests
         Assert.That(game.MakeMove(CoordinateMove.Parse("e2e4")), Is.EqualTo(MoveResult.Move));
         Assert.That(game!.CurrentColor, Is.EqualTo(PieceColor.Black));
         var expected = Board(new ChessGame());
-        expected[AlgebraicNotation.ParseSquare("e2")] = ChessPiece.Empty;
-        expected[AlgebraicNotation.ParseSquare("e4")] = new(PieceColor.White, PieceValue.Pawn);
+        expected[Square.Parse("e2").Index] = ChessPiece.Empty;
+        expected[Square.Parse("e4").Index] = new(PieceColor.White, PieceValue.Pawn);
         Assert.That(Board(game), Is.EqualTo(expected));
         Assert.That(game.MakeMove(CoordinateMove.Parse("e7e5")), Is.EqualTo(MoveResult.Move));
-        expected[AlgebraicNotation.ParseSquare("e7")] = ChessPiece.Empty;
-        expected[AlgebraicNotation.ParseSquare("e5")] = new(PieceColor.Black, PieceValue.Pawn);
+        expected[Square.Parse("e7").Index] = ChessPiece.Empty;
+        expected[Square.Parse("e5").Index] = new(PieceColor.Black, PieceValue.Pawn);
         Assert.That(Board(game), Is.EqualTo(expected));
         Assert.That(game!.CurrentColor, Is.EqualTo(PieceColor.White));
     }
@@ -77,8 +77,8 @@ internal class ChessGameTests
         Assert.That(game.MakeMove(CoordinateMove.Parse("e2e4")), Is.EqualTo(MoveResult.Move));
         Assert.That(game.MakeMove(CoordinateMove.Parse("d7d5")), Is.EqualTo(MoveResult.Move));
         var expected = Board(game!);
-        expected[AlgebraicNotation.ParseSquare("e4")] = ChessPiece.Empty;
-        expected[AlgebraicNotation.ParseSquare("d5")] = new(PieceColor.White, PieceValue.Pawn);
+        expected[Square.Parse("e4").Index] = ChessPiece.Empty;
+        expected[Square.Parse("d5").Index] = new(PieceColor.White, PieceValue.Pawn);
         Assert.That(game.MakeMove(CoordinateMove.Parse("e4d5")), Is.EqualTo(MoveResult.Move | MoveResult.Capture));
         Assert.That(Board(game), Is.EqualTo(expected));
         Assert.That(game!.CurrentColor, Is.EqualTo(PieceColor.Black));

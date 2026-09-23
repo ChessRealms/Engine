@@ -18,6 +18,27 @@ internal class PublicApiSurfaceTests
         });
     }
 
+    [TestCase("a1")]
+    [TestCase("h8")]
+    [TestCase("e4")]
+    public void Square_ParsesAndRoundTrips(string text)
+    {
+        Assert.That(Square.TryParse(text, out var square), Is.True);
+        Assert.That(square.ToString(), Is.EqualTo(text));
+    }
+
+    [TestCase("")]
+    [TestCase("A1")]
+    [TestCase("a0")]
+    [TestCase("i1")]
+    [TestCase("a1 ")]
+    public void Square_RejectsInvalidText(string text)
+    {
+        Assert.That(Square.TryParse(text, out var square), Is.False);
+        Assert.That(square, Is.EqualTo(default(Square)));
+        Assert.Throws<FormatException>(() => Square.Parse(text));
+    }
+
     [Test]
     public void ExportedTypes_AreTheReviewedRootSurface()
     {

@@ -28,7 +28,7 @@ internal class CompleteGameRulesTests
     {
         var board = new ChessPiece[64];
         game.CopyBoardTo(board);
-        return board[AlgebraicNotation.ParseSquare(square)];
+        return board[Square.Parse(square).Index];
     }
 
     [TestCase("")]
@@ -109,8 +109,8 @@ internal class CompleteGameRulesTests
         string src = black ? "a2" : "a7";
         string trg = (capture ? "b" : "a") + (black ? "1" : "8");
         string before = State(game);
-        var moves = game.GetLegalMoves().Where(m => m.Source.Index == AlgebraicNotation.ParseSquare(src)
-            && m.Target.Index == AlgebraicNotation.ParseSquare(trg)).ToArray();
+        var moves = game.GetLegalMoves().Where(m => m.Source == Square.Parse(src)
+            && m.Target == Square.Parse(trg)).ToArray();
         Assert.That(moves, Has.Length.EqualTo(4));
         Assert.That(moves.Select(m => m.Promotion), Is.EquivalentTo(
             new[] { PieceValue.Queen, PieceValue.Rook, PieceValue.Bishop, PieceValue.Knight }));
