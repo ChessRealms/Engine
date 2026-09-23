@@ -1,9 +1,6 @@
 <Solution>
   <Folder Name="/docs/" Id="a576d511-a7dd-48da-89d2-a534742656e6">
-    <File Path="docs/dotnet-10-migration.md" />
     <File Path="docs/game-rules-api.md" />
-    <File Path="docs/game-rules-validation.md" />
-    <File Path="docs/known-issues.md" />
   </Folder>
   <Folder Name="/scripts/" Id="9f3eeaa3-c0d2-4d93-af81-f93234779361">
     <File Path="scripts/Verify-SolutionStructure.ps1" />
