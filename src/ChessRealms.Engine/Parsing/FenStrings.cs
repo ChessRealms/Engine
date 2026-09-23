@@ -7,11 +7,11 @@ using System.Text;
 
 namespace ChessRealms.Engine.Parsing;
 
-public static class FenStrings
+internal static class FenStrings
 {
-    public const string StartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    internal const string StartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    public static bool TryParse(string? fen, out Position position)
+    internal static bool TryParse(string? fen, out Position position)
     {
         if (TryParseSyntax(fen, out var candidate) && PositionValidation.IsValid(candidate))
         {
@@ -87,7 +87,7 @@ public static class FenStrings
             && BigInteger.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out value);
     }
 
-    public static string Format(Position position)
+    internal static string Format(Position position)
     {
         if (!PositionValidation.IsValid(position)) throw new ArgumentException("Invalid standard chess position.", nameof(position));
         return FormatUnchecked(position);

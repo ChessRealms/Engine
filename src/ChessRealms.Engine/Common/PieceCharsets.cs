@@ -1,6 +1,6 @@
 namespace ChessRealms.Engine.Common;
 
-public static class PieceCharsets
+internal static class PieceCharsets
 {
     public static class Ascii
     {

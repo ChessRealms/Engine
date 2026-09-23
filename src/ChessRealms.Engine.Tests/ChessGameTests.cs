@@ -7,7 +7,7 @@ internal class ChessGameTests
     private static ChessPiece[] Board(ChessGame game)
     {
         var board = new ChessPiece[64];
-        game.GetBoardToSpan(board);
+        game.CopyBoardTo(board);
         return board;
     }
 
@@ -24,9 +24,9 @@ internal class ChessGameTests
         Assert.Multiple(() =>
         {
             Assert.That(game!.CurrentColor, Is.EqualTo(PieceColor.White));
-            Assert.That(game.EnemyColor, Is.EqualTo(PieceColor.Black));
+            Assert.That(game.OpponentColor, Is.EqualTo(PieceColor.Black));
             Assert.That(game.IsFinished, Is.False);
-            Assert.That(game.HasMoves(), Is.True);
+            Assert.That(game.HasLegalMoves, Is.True);
             for (int file = 0; file < 8; file++)
             {
                 Assert.That(board[file], Is.EqualTo(new ChessPiece(PieceColor.White, backRank[file])));
@@ -46,7 +46,7 @@ internal class ChessGameTests
         Assert.Multiple(() =>
         {
             Assert.That(game!.CurrentColor, Is.EqualTo(PieceColor.Black));
-            Assert.That(board.Count(piece => !piece.IsEmpty()), Is.EqualTo(3));
+            Assert.That(board.Count(piece => !piece.IsEmpty), Is.EqualTo(3));
             AssertPiece(board, "e8", PieceColor.Black, PieceValue.King);
             AssertPiece(board, "e1", PieceColor.White, PieceValue.King);
             AssertPiece(board, "e2", PieceColor.White, PieceValue.Pawn);
@@ -57,13 +57,13 @@ internal class ChessGameTests
     public void OrdinaryMoves_UpdateBoardAndAlternateSides()
     {
         ChessGame game = new();
-        Assert.That(game.MakeMove(AlgebraicMove.Parse("e2e4")), Is.EqualTo(MoveResult.Move));
+        Assert.That(game.MakeMove(CoordinateMove.Parse("e2e4")), Is.EqualTo(MoveResult.Move));
         Assert.That(game!.CurrentColor, Is.EqualTo(PieceColor.Black));
         var expected = Board(new ChessGame());
         expected[AlgebraicNotation.ParseSquare("e2")] = ChessPiece.Empty;
         expected[AlgebraicNotation.ParseSquare("e4")] = new(PieceColor.White, PieceValue.Pawn);
         Assert.That(Board(game), Is.EqualTo(expected));
-        Assert.That(game.MakeMove(AlgebraicMove.Parse("e7e5")), Is.EqualTo(MoveResult.Move));
+        Assert.That(game.MakeMove(CoordinateMove.Parse("e7e5")), Is.EqualTo(MoveResult.Move));
         expected[AlgebraicNotation.ParseSquare("e7")] = ChessPiece.Empty;
         expected[AlgebraicNotation.ParseSquare("e5")] = new(PieceColor.Black, PieceValue.Pawn);
         Assert.That(Board(game), Is.EqualTo(expected));
@@ -74,12 +74,12 @@ internal class ChessGameTests
     public void Capture_RemovesEnemyAndMovesAttacker()
     {
         ChessGame game = new();
-        Assert.That(game.MakeMove(AlgebraicMove.Parse("e2e4")), Is.EqualTo(MoveResult.Move));
-        Assert.That(game.MakeMove(AlgebraicMove.Parse("d7d5")), Is.EqualTo(MoveResult.Move));
+        Assert.That(game.MakeMove(CoordinateMove.Parse("e2e4")), Is.EqualTo(MoveResult.Move));
+        Assert.That(game.MakeMove(CoordinateMove.Parse("d7d5")), Is.EqualTo(MoveResult.Move));
         var expected = Board(game!);
         expected[AlgebraicNotation.ParseSquare("e4")] = ChessPiece.Empty;
         expected[AlgebraicNotation.ParseSquare("d5")] = new(PieceColor.White, PieceValue.Pawn);
-        Assert.That(game.MakeMove(AlgebraicMove.Parse("e4d5")), Is.EqualTo(MoveResult.Move | MoveResult.Capture));
+        Assert.That(game.MakeMove(CoordinateMove.Parse("e4d5")), Is.EqualTo(MoveResult.Move | MoveResult.Capture));
         Assert.That(Board(game), Is.EqualTo(expected));
         Assert.That(game!.CurrentColor, Is.EqualTo(PieceColor.Black));
     }
@@ -94,7 +94,7 @@ internal class ChessGameTests
         var before = Board(game!);
         var color = game!.CurrentColor;
         var finished = game.IsFinished;
-        Assert.That(game.MakeMove(AlgebraicMove.Parse(move)), Is.EqualTo(MoveResult.None));
+        Assert.That(game.MakeMove(CoordinateMove.Parse(move)), Is.EqualTo(MoveResult.None));
         Assert.Multiple(() =>
         {
             Assert.That(Board(game), Is.EqualTo(before));

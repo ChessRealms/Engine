@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace ChessRealms.Engine.Core.Constants;
 
-public static class Colors
+internal static class Colors
 {
     public const int Black = 0;
     public const int White = 1;
@@ -21,7 +21,7 @@ public static class Colors
     }
 }
 
-public static class Pieces
+internal static class Pieces
 {
     public const int Pawn = 0;
     public const int Knight = 1;
@@ -38,7 +38,7 @@ public static class Pieces
     }
 }
 
-public static class Promotions
+internal static class Promotions
 {
     public const int None = 0;
     public const int Knight = 1;
@@ -55,7 +55,7 @@ public static class Promotions
     }
 }
 
-public static class Castlings
+internal static class Castlings
 {
     public const int None = 0;
     public const int WK = 1;
@@ -84,7 +84,7 @@ public static class Castlings
     }
 }
 
-public static class Directions
+internal static class Directions
 {
     public const int North = 8;
     public const int South = -8;
@@ -98,7 +98,7 @@ public static class Directions
     public const int SouthWest = South + West;
 }
 
-public static class BitboardIndicies
+internal static class BitboardIndicies
 {
     public const int BPawn = 0;
     public const int BKnight = 1;
@@ -119,7 +119,7 @@ public static class BitboardIndicies
     public const int AllBlockers = 2;
 }
 
-public static class Squares
+internal static class Squares
 {
     public const int Empty = -1;
 

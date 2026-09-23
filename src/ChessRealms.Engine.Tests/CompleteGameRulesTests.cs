@@ -17,7 +17,7 @@ internal class CompleteGameRulesTests
     private static void Play(ChessGame game, string moves)
     {
         foreach (string move in moves.Split(' '))
-            Assert.That(game.MakeMove(AlgebraicMove.Parse(move)), Is.Not.EqualTo(MoveResult.None), move);
+            Assert.That(game.MakeMove(CoordinateMove.Parse(move)), Is.Not.EqualTo(MoveResult.None), move);
     }
 
     private static string State(ChessGame game) => string.Join("|", game.ToFen(), game.Outcome, game.State,
@@ -27,7 +27,7 @@ internal class CompleteGameRulesTests
     private static ChessPiece At(ChessGame game, string square)
     {
         var board = new ChessPiece[64];
-        game.GetBoardToSpan(board);
+        game.CopyBoardTo(board);
         return board[AlgebraicNotation.ParseSquare(square)];
     }
 
@@ -45,9 +45,9 @@ internal class CompleteGameRulesTests
     [TestCase("a7a8k")]
     public void CoordinateInput_IsStrict(string input)
     {
-        Assert.That(AlgebraicMove.TryParse(input, out var move), Is.False);
-        Assert.That(move, Is.EqualTo(AlgebraicMove.Empty));
-        Assert.Throws<FormatException>(() => AlgebraicMove.Parse(input));
+        Assert.That(CoordinateMove.TryParse(input, out var move), Is.False);
+        Assert.That(move, Is.EqualTo(default(CoordinateMove)));
+        Assert.Throws<FormatException>(() => CoordinateMove.Parse(input));
     }
 
     [TestCase("e2e4", PieceValue.None)]
@@ -57,10 +57,10 @@ internal class CompleteGameRulesTests
     [TestCase("a7a8n", PieceValue.Knight)]
     public void CoordinateInput_RoundTrips(string input, PieceValue promotion)
     {
-        Assert.That(AlgebraicMove.TryParse(input, out var move), Is.True);
+        Assert.That(CoordinateMove.TryParse(input, out var move), Is.True);
         Assert.That(move.Promotion, Is.EqualTo(promotion));
         Assert.That(move.ToString(), Is.EqualTo(input));
-        Assert.That(move, Is.EqualTo(AlgebraicMove.Parse(input)));
+        Assert.That(move, Is.EqualTo(CoordinateMove.Parse(input)));
     }
 
     [Test]
@@ -85,14 +85,15 @@ internal class CompleteGameRulesTests
         Assert.That(oldHistory, Is.Empty);
         Assert.That(oldMoves, Has.Count.EqualTo(20));
         string before = State(game);
-        foreach (var move in new[] { default(AlgebraicMove), new AlgebraicMove(-1, 64),
-            new AlgebraicMove(Squares.e7, Squares.e5, (PieceValue)99),
-            AlgebraicMove.Parse("e7e5q"), AlgebraicMove.Parse("e2e4") })
+        foreach (var move in new[] { default(CoordinateMove), CoordinateMove.Parse("e7e5q"),
+            CoordinateMove.Parse("e2e4") })
             Assert.That(game.MakeMove(move), Is.EqualTo(MoveResult.None));
+        Assert.Throws<ArgumentException>(() => new CoordinateMove(new Square(Squares.e7),
+            new Square(Squares.e5), (PieceValue)99));
         var history = (IList<MoveHistoryEntry>)game.History;
         Assert.Throws<NotSupportedException>(() => history.Clear());
-        var legal = (IList<AlgebraicMove>)game.GetLegalMoves();
-        Assert.Throws<NotSupportedException>(() => legal[0] = AlgebraicMove.Empty);
+        var legal = (IList<CoordinateMove>)game.GetLegalMoves();
+        Assert.Throws<NotSupportedException>(() => legal[0] = default);
         Assert.That(State(game), Is.EqualTo(before));
     }
 
@@ -108,14 +109,14 @@ internal class CompleteGameRulesTests
         string src = black ? "a2" : "a7";
         string trg = (capture ? "b" : "a") + (black ? "1" : "8");
         string before = State(game);
-        var moves = game.GetLegalMoves().Where(m => (int)m.Src == AlgebraicNotation.ParseSquare(src)
-            && (int)m.Trg == AlgebraicNotation.ParseSquare(trg)).ToArray();
+        var moves = game.GetLegalMoves().Where(m => m.Source.Index == AlgebraicNotation.ParseSquare(src)
+            && m.Target.Index == AlgebraicNotation.ParseSquare(trg)).ToArray();
         Assert.That(moves, Has.Length.EqualTo(4));
         Assert.That(moves.Select(m => m.Promotion), Is.EquivalentTo(
             new[] { PieceValue.Queen, PieceValue.Rook, PieceValue.Bishop, PieceValue.Knight }));
-        Assert.That(game.MakeMove(AlgebraicMove.Parse(src + trg)), Is.EqualTo(MoveResult.None));
+        Assert.That(game.MakeMove(CoordinateMove.Parse(src + trg)), Is.EqualTo(MoveResult.None));
         Assert.That(State(game), Is.EqualTo(before));
-        var selected = AlgebraicMove.Parse(src + trg + suffix);
+        var selected = CoordinateMove.Parse(src + trg + suffix);
         var result = game.MakeMove(selected);
         Assert.That(result.HasFlag(MoveResult.Move), Is.True);
         Assert.That(result.HasFlag(MoveResult.Capture), Is.EqualTo(capture));
@@ -141,7 +142,7 @@ internal class CompleteGameRulesTests
         Assert.That(game.Outcome.Winner, Is.EqualTo(winner));
         Assert.That(game.GetLegalMoves(), Is.Empty);
         string before = State(game);
-        Assert.That(game.MakeMove(AlgebraicMove.Parse("h8h7")), Is.EqualTo(MoveResult.None));
+        Assert.That(game.MakeMove(CoordinateMove.Parse("h8h7")), Is.EqualTo(MoveResult.None));
         Assert.That(game.ClaimDraw(DrawClaim.FiftyMoveRule), Is.False);
         Assert.That(game.UndoMove(), Is.False);
         Assert.That(State(game), Is.EqualTo(before));
@@ -153,13 +154,13 @@ internal class CompleteGameRulesTests
         ChessGame game = new();
         Play(game, "f2f3 e7e5 g2g4");
         string beforeMate = State(game);
-        var result = game.MakeMove(AlgebraicMove.Parse("d8h4"));
+        var result = game.MakeMove(CoordinateMove.Parse("d8h4"));
         Assert.That(result.HasFlag(MoveResult.Checkmate), Is.True);
         Assert.That(game.CurrentColor, Is.EqualTo(PieceColor.White));
         Assert.That(game.Outcome, Is.EqualTo(new GameOutcome(GameResult.BlackWin, PieceColor.Black, FinishReason.Checkmate)));
         string afterMate = State(game);
-        Assert.That(game.MakeMove(AlgebraicMove.Parse("a7a6")), Is.EqualTo(MoveResult.None));
-        Assert.That(game.MakeMove(AlgebraicMove.Parse("a2a3")), Is.EqualTo(MoveResult.None));
+        Assert.That(game.MakeMove(CoordinateMove.Parse("a7a6")), Is.EqualTo(MoveResult.None));
+        Assert.That(game.MakeMove(CoordinateMove.Parse("a2a3")), Is.EqualTo(MoveResult.None));
         Assert.That(State(game), Is.EqualTo(afterMate));
         Assert.That(game.UndoMove(), Is.True);
         Assert.That(State(game), Is.EqualTo(beforeMate));
@@ -213,8 +214,8 @@ internal class CompleteGameRulesTests
     {
         var game = Game(fen);
         string before = State(game);
-        Assert.That(game.GetLegalMoves(), Does.Not.Contain(AlgebraicMove.Parse(move)));
-        Assert.That(game.MakeMove(AlgebraicMove.Parse(move)), Is.EqualTo(MoveResult.None));
+        Assert.That(game.GetLegalMoves(), Does.Not.Contain(CoordinateMove.Parse(move)));
+        Assert.That(game.MakeMove(CoordinateMove.Parse(move)), Is.EqualTo(MoveResult.None));
         Assert.That(State(game), Is.EqualTo(before));
     }
 
@@ -224,7 +225,7 @@ internal class CompleteGameRulesTests
     {
         var game = Game(fen);
         string before = State(game);
-        Assert.That(game.MakeMove(AlgebraicMove.Parse(move)).HasFlag(MoveResult.Capture), Is.True);
+        Assert.That(game.MakeMove(CoordinateMove.Parse(move)).HasFlag(MoveResult.Capture), Is.True);
         Assert.That(At(game, captured), Is.EqualTo(ChessPiece.Empty));
         Assert.That(game.ToFen().Split(' ')[3], Is.EqualTo("-"));
         Assert.That(game.HalfmoveClock.IsZero, Is.True);
@@ -240,8 +241,8 @@ internal class CompleteGameRulesTests
     {
         var game = Game(fen);
         string before = State(game);
-        Assert.That(game.GetLegalMoves(), Does.Not.Contain(AlgebraicMove.Parse(move)));
-        Assert.That(game.MakeMove(AlgebraicMove.Parse(move)), Is.EqualTo(MoveResult.None));
+        Assert.That(game.GetLegalMoves(), Does.Not.Contain(CoordinateMove.Parse(move)));
+        Assert.That(game.MakeMove(CoordinateMove.Parse(move)), Is.EqualTo(MoveResult.None));
         Assert.That(State(game), Is.EqualTo(before));
     }
 
@@ -254,9 +255,9 @@ internal class CompleteGameRulesTests
         Play(game, "h7h5");
         Assert.That(game.ToFen(), Does.EndWith("w KQkq h6 0 2"));
         Play(game, "e4e5 d7d5");
-        Assert.That(game.GetLegalMoves(), Does.Contain(AlgebraicMove.Parse("e5d6")));
+        Assert.That(game.GetLegalMoves(), Does.Contain(CoordinateMove.Parse("e5d6")));
         Play(game, "g1f3 g8f6");
-        Assert.That(game.GetLegalMoves(), Does.Not.Contain(AlgebraicMove.Parse("e5d6")));
+        Assert.That(game.GetLegalMoves(), Does.Not.Contain(CoordinateMove.Parse("e5d6")));
     }
 
     [Test]
@@ -264,7 +265,7 @@ internal class CompleteGameRulesTests
     {
         var game = Game("4k3/8/8/8/8/8/8/R3K3 w - - 99 50");
         string before = State(game);
-        Assert.That(game.GetAvailableDrawClaims(AlgebraicMove.Parse("a1a2")), Is.EqualTo(DrawClaim.FiftyMoveRule));
+        Assert.That(game.GetAvailableDrawClaims(CoordinateMove.Parse("a1a2")), Is.EqualTo(DrawClaim.FiftyMoveRule));
         Assert.That(State(game), Is.EqualTo(before));
         Play(game, "a1a2");
         Assert.That(game.HalfmoveClock, Is.EqualTo(new BigInteger(100)));
@@ -304,11 +305,11 @@ internal class CompleteGameRulesTests
         var game = Game("4k3/8/8/8/8/8/8/R3K3 w - - 99 50");
         string before = State(game);
         Assert.That(game.ClaimDraw(DrawClaim.FiftyMoveRule), Is.False);
-        Assert.That(game.ClaimDraw(DrawClaim.FiftyMoveRule, AlgebraicMove.Parse("a1b2")), Is.False);
-        Assert.That(game.ClaimDraw((DrawClaim)3, AlgebraicMove.Parse("a1a2")), Is.False);
+        Assert.That(game.ClaimDraw(DrawClaim.FiftyMoveRule, CoordinateMove.Parse("a1b2")), Is.False);
+        Assert.That(game.ClaimDraw((DrawClaim)3, CoordinateMove.Parse("a1a2")), Is.False);
         Assert.That(State(game), Is.EqualTo(before));
         string fen = game.ToFen();
-        Assert.That(game.ClaimDraw(DrawClaim.FiftyMoveRule, AlgebraicMove.Parse("a1a2")), Is.True);
+        Assert.That(game.ClaimDraw(DrawClaim.FiftyMoveRule, CoordinateMove.Parse("a1a2")), Is.True);
         Assert.That(game.ToFen(), Is.EqualTo(fen));
         Assert.That(game.History, Is.Empty);
         Assert.That(game.Outcome.Reason, Is.EqualTo(FinishReason.FiftyMoveRule));
@@ -321,10 +322,10 @@ internal class CompleteGameRulesTests
         const string cycle = "g1f3 g8f6 f3g1 f6g8";
         Play(game, cycle);
         Play(game, "g1f3 g8f6 f3g1");
-        Assert.That(game.GetAvailableDrawClaims(AlgebraicMove.Parse("f6g8")), Is.EqualTo(DrawClaim.ThreefoldRepetition));
+        Assert.That(game.GetAvailableDrawClaims(CoordinateMove.Parse("f6g8")), Is.EqualTo(DrawClaim.ThreefoldRepetition));
         var claiming = game.Clone();
         string claimFen = claiming.ToFen();
-        Assert.That(claiming.ClaimDraw(DrawClaim.ThreefoldRepetition, AlgebraicMove.Parse("f6g8")), Is.True);
+        Assert.That(claiming.ClaimDraw(DrawClaim.ThreefoldRepetition, CoordinateMove.Parse("f6g8")), Is.True);
         Assert.That(claiming.ToFen(), Is.EqualTo(claimFen));
         Assert.That(game.IsFinished, Is.False);
         Play(game, "f6g8");
@@ -425,7 +426,8 @@ internal class CompleteGameRulesTests
                 var positionBefore = copy.Position;
                 Assert.That(copy.MakeMove(move), Is.Not.EqualTo(MoveResult.None), move.ToString());
                 AssertInvariants(copy.Position);
-                Assert.That(copy.Position.IsKingChecked((int)game.CurrentColor), Is.False);
+                int previousColor = game.CurrentColor == PieceColor.White ? Colors.White : Colors.Black;
+                Assert.That(copy.Position.IsKingChecked(previousColor), Is.False);
                 Assert.That(FenStrings.TryParse(copy.ToFen(), out var imported), Is.True);
                 Assert.That(FenStrings.Format(imported), Is.EqualTo(copy.ToFen()));
                 Assert.That(copy.UndoMove(), Is.True);

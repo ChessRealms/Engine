@@ -1,6 +1,6 @@
 namespace ChessRealms.Engine.Common;
 
-public static unsafe class UnsafeArrays
+internal static unsafe class UnsafeArrays
 {
     public static HashSet<int> ToHashSet(int* ptr, int length)
     {

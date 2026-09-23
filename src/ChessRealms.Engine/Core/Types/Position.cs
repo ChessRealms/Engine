@@ -11,7 +11,7 @@ namespace ChessRealms.Engine.Core.Types;
 
 
 /// <summary>A value snapshot. Assignment copies bitboards; its BigInteger counters are immutable.</summary>
-public struct Position : IEquatable<Position>
+internal struct Position : IEquatable<Position>
 {
     internal PieceBoards pieceBBs;
     internal OccupancyBoards blockers;

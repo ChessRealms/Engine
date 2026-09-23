@@ -1,20 +1,19 @@
-using ChessRealms.Engine.Core.Constants;
-using System.Runtime.CompilerServices;
-
 namespace ChessRealms.Engine;
 
+/// <summary>A chess side, or no side for values such as an empty square.</summary>
 public enum PieceColor
 {
-    Black = Colors.Black,
-    White = Colors.White,
-    None = Colors.None
+    None,
+    White,
+    Black
 }
 
-public static class PieceColorExtensions
+internal static class PieceColorConversions
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsBlackOrWhite(this PieceColor color)
+    internal static PieceColor ToPublicColor(this int color) => color switch
     {
-        return color == PieceColor.Black || color == PieceColor.White;
-    }
+        Core.Constants.Colors.White => PieceColor.White,
+        Core.Constants.Colors.Black => PieceColor.Black,
+        _ => PieceColor.None
+    };
 }

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace ChessRealms.Engine.Core.Math;
 
-public static class BitboardOps
+internal static class BitboardOps
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong GetBitAt(ulong bitboard, int square)

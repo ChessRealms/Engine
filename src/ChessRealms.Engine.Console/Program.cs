@@ -1,6 +1,4 @@
 using ChessRealms.Engine;
-using ChessRealms.Engine.Common;
-using ChessRealms.Engine.Core.Math;
 
 MoveResult lastMoveResult = MoveResult.None;
 ChessGame chessGame = new();
@@ -30,19 +28,19 @@ while (true)
     {
         DrawClaim reason = command[0] == "claim3" ? DrawClaim.ThreefoldRepetition : DrawClaim.FiftyMoveRule;
         bool claimed = command.Length == 1 ? chessGame.ClaimDraw(reason)
-            : command.Length == 2 && AlgebraicMove.TryParse(command[1], out var intended)
+            : command.Length == 2 && CoordinateMove.TryParse(command[1], out var intended)
                 && chessGame.ClaimDraw(reason, intended);
         Console.WriteLine(claimed ? "Draw claimed." : "Draw claim unavailable.");
         continue;
     }
-    bool success = AlgebraicMove.TryParse(input, out var move)
+    bool success = CoordinateMove.TryParse(input, out var move)
         && (lastMoveResult = chessGame.MakeMove(move)) != MoveResult.None;
     if (!success) Console.WriteLine("Invalid move or game already finished.");
 }
 static void PrintBoard(ChessGame chessGame)
 {
     Span<ChessPiece> pieceSpan = stackalloc ChessPiece[64];
-    chessGame.GetBoardToSpan(pieceSpan);
+    chessGame.CopyBoardTo(pieceSpan);
 
     Console.WriteLine("   a b c d e f g h");
 
@@ -52,9 +50,9 @@ static void PrintBoard(ChessGame chessGame)
 
         for (int f = 0; f < 8; ++f)
         {
-            int square = SquareOps.FromFileRank(f, r);
+            int square = r * 8 + f;
 
-            if (pieceSpan[square].IsEmpty())
+            if (pieceSpan[square].IsEmpty)
             {
                 Console.Write('.');
             }
@@ -74,12 +72,12 @@ static char PieceToString(ref ChessPiece piece)
 {
     char p = piece.Value switch
     {
-        PieceValue.Pawn => PieceCharsets.Ascii.Pawn,
-        PieceValue.Knight => PieceCharsets.Ascii.Knight,
-        PieceValue.Bishop => PieceCharsets.Ascii.Bishop,
-        PieceValue.Rook => PieceCharsets.Ascii.Rook,
-        PieceValue.Queen => PieceCharsets.Ascii.Queen,
-        PieceValue.King => PieceCharsets.Ascii.King,
+        PieceValue.Pawn => 'p',
+        PieceValue.Knight => 'n',
+        PieceValue.Bishop => 'b',
+        PieceValue.Rook => 'r',
+        PieceValue.Queen => 'q',
+        PieceValue.King => 'k',
         _ => '\0'
     };
 
