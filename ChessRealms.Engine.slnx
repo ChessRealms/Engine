@@ -1,8 +1,12 @@
 <Solution>
   <Folder Name="/docs/" Id="a576d511-a7dd-48da-89d2-a534742656e6">
     <File Path="docs/game-rules-api.md" />
+    <File Path="docs/releasing.md" />
   </Folder>
   <Folder Name="/scripts/" Id="9f3eeaa3-c0d2-4d93-af81-f93234779361">
+    <File Path="scripts/Resolve-ReleaseVersion.ps1" />
+    <File Path="scripts/Test-PackageConsumer.ps1" />
+    <File Path="scripts/Verify-Package.ps1" />
     <File Path="scripts/Verify-SolutionStructure.ps1" />
   </Folder>
   <Folder Name="/Solution Items/">
@@ -19,6 +23,7 @@
   <Folder Name="/Solution Items/.github/" />
   <Folder Name="/Solution Items/.github/workflows/">
     <File Path=".github/workflows/ci.yml" />
+    <File Path=".github/workflows/release.yml" />
   </Folder>
   <Folder Name="/src/" Id="7cc56138-8080-42ef-beb6-c075dac09fd8">
     <Project Path="src/ChessRealms.Engine.Benchmark/ChessRealms.Engine.Benchmark.csproj" />
