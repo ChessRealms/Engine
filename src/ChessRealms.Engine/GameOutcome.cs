@@ -11,4 +11,4 @@ public readonly record struct GameOutcome(GameResult Result, PieceColor Winner, 
     public static GameOutcome Ongoing => new(GameResult.Ongoing, PieceColor.None, FinishReason.None);
 }
 
-public readonly record struct MoveHistoryEntry(AlgebraicMove Move, string FenBefore, string FenAfter, MoveResult Result);
+public readonly record struct MoveHistoryEntry(CoordinateMove Move, string FenBefore, string FenAfter, MoveResult Result);

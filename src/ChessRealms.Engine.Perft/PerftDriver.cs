@@ -5,9 +5,9 @@ using System.Text;
 
 namespace Perft
 {
-    public static class PerftDriver
+    internal static class PerftDriver
     {
-        public struct PerftResult
+        internal struct PerftResult
         {
             public ulong Nodes;
             public int Captures;
@@ -27,7 +27,7 @@ namespace Perft
             }
         }
 
-        public static PerftResult Test(Position pos, int depth, bool upper = true)
+        internal static PerftResult Test(Position pos, int depth, bool upper = true)
         {
             Position tmpPos = new();
             Span<int> moves = stackalloc int[MoveGen.MaxMoves];

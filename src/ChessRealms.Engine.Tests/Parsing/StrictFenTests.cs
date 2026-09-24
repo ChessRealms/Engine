@@ -91,14 +91,14 @@ internal class StrictFenTests
     }
 
     [Test]
-    public void PublicPositionEntryPoints_RejectMalformedState()
+    public void InternalPositionEntryPoints_RejectMalformedState()
     {
         Assert.Throws<ArgumentException>(() => new ChessGame(default(Position)));
         Assert.Throws<ArgumentException>(() => FenStrings.Format(default));
         Assert.Throws<InvalidOperationException>(() => new Position().IsKingChecked());
         Assert.Throws<ArgumentOutOfRangeException>(() => Position.CreateDefault().GetPieceAt(64, Colors.White));
         Assert.Throws<ArgumentOutOfRangeException>(() => Position.CreateDefault().GetPieceAt(0, 3));
-        Assert.Throws<ArgumentException>(() => new ChessGame().GetBoardToSpan(new ChessPiece[63]));
+        Assert.Throws<ArgumentException>(() => new ChessGame().CopyBoardTo(new ChessPiece[63]));
         var p = Position.CreateDefault();
         p.SetPieceAt(Squares.a2, Pieces.Queen, Colors.White);
         Assert.Throws<ArgumentException>(() => new ChessGame(p));

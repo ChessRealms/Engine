@@ -10,15 +10,18 @@ namespace ChessRealms.Engine;
 /// <summary>A mutable game with exclusive history ownership. Use Clone for independent analysis.</summary>
 public sealed class ChessGame
 {
+    /// <summary>The FEN for the standard starting position.</summary>
+    public const string StartingFen = FenStrings.StartPosition;
+
     private Position position;
     private readonly List<MoveHistoryEntry> history = [];
     private readonly List<Position> undo = [];
     private readonly List<string> keys = [];
     private readonly Dictionary<string, int> repetitions = new(StringComparer.Ordinal);
 
-    public PieceColor CurrentColor => (PieceColor)position.color;
-    public PieceColor EnemyColor => (PieceColor)Colors.Mirror(position.color);
-    public Position Position => position;
+    public PieceColor CurrentColor => position.color.ToPublicColor();
+    public PieceColor OpponentColor => Colors.Mirror(position.color).ToPublicColor();
+    internal Position Position => position;
     public BigInteger HalfmoveClock => position.halfMoveClock;
     public BigInteger FullmoveNumber => position.fullMoveCount;
     public GameOutcome Outcome { get; private set; } = GameOutcome.Ongoing;
@@ -31,7 +34,7 @@ public sealed class ChessGame
 
     public ChessGame() : this(Position.CreateDefault()) { }
 
-    public ChessGame(Position position)
+    internal ChessGame(Position position)
     {
         if (!PositionValidation.IsValid(position)) throw new ArgumentException("Invalid standard chess position.", nameof(position));
         this.position = position;
@@ -55,25 +58,39 @@ public sealed class ChessGame
     public ChessGame Clone() => new(this);
     public string ToFen() => FenStrings.FormatUnchecked(position);
 
-    public void GetBoardToSpan(Span<ChessPiece> destination)
+    /// <summary>Copies the board in a1-to-h8 order.</summary>
+    public void CopyBoardTo(Span<ChessPiece> destination)
     {
         if (destination.Length < 64) throw new ArgumentException("Board requires 64 squares.", nameof(destination));
         for (int i = 0; i < 64; i++)
         {
             var piece = position.GetPieceAt(i, Colors.White);
             if (!Piece.IsValid(piece)) piece = position.GetPieceAt(i, Colors.Black);
-            destination[i] = Piece.IsValid(piece) ? new((PieceColor)piece.Color, (PieceValue)piece.Value) : ChessPiece.Empty;
+            destination[i] = Piece.IsValid(piece)
+                ? new(piece.Color.ToPublicColor(), piece.Value.ToPublicPiece())
+                : ChessPiece.Empty;
         }
     }
 
+    /// <summary>Gets the piece on a square, or <see cref="ChessPiece.Empty"/> if it is vacant.</summary>
+    public ChessPiece GetPiece(Square square)
+    {
+        if (!square.IsValid) throw new ArgumentException("A valid square is required.", nameof(square));
+        var piece = position.GetPieceAt(square.Index, Colors.White);
+        if (!Piece.IsValid(piece)) piece = position.GetPieceAt(square.Index, Colors.Black);
+        return Piece.IsValid(piece)
+            ? new(piece.Color.ToPublicColor(), piece.Value.ToPublicPiece())
+            : ChessPiece.Empty;
+    }
+
     /// <summary>Snapshot of playable moves; empty after completion. Does not mutate the game.</summary>
-    public IReadOnlyList<AlgebraicMove> GetLegalMoves() => IsFinished
-        ? Array.Empty<AlgebraicMove>()
+    public IReadOnlyList<CoordinateMove> GetLegalMoves() => IsFinished
+        ? Array.Empty<CoordinateMove>()
         : Array.AsReadOnly(LegalMoves(position).Select(ToPublicMove).ToArray());
 
-    public bool HasMoves() => !IsFinished && LegalMoves(position).Count != 0;
+    public bool HasLegalMoves => !IsFinished && LegalMoves(position).Count != 0;
 
-    public MoveResult MakeMove(in AlgebraicMove move)
+    public MoveResult MakeMove(CoordinateMove move)
     {
         if (IsFinished || !TryFindMove(move, out int encoded)) return MoveResult.None;
         var next = position;
@@ -114,7 +131,7 @@ public sealed class ChessGame
     }
 
     /// <summary>Claims available after an intended legal move, without executing it.</summary>
-    public DrawClaim GetAvailableDrawClaims(in AlgebraicMove intendedMove)
+    public DrawClaim GetAvailableDrawClaims(CoordinateMove intendedMove)
     {
         if (IsFinished || !TryFindMove(intendedMove, out int encoded)) return DrawClaim.None;
         var next = position;
@@ -125,7 +142,7 @@ public sealed class ChessGame
     }
 
     /// <summary>A valid intended-move claim ends the game at its current board; the move is not played.</summary>
-    public bool ClaimDraw(DrawClaim reason, AlgebraicMove? intendedMove = null)
+    public bool ClaimDraw(DrawClaim reason, CoordinateMove? intendedMove = null)
     {
         if (reason is not (DrawClaim.ThreefoldRepetition or DrawClaim.FiftyMoveRule)) return false;
         DrawClaim available = intendedMove is { } move ? GetAvailableDrawClaims(move) : AvailableDrawClaims;
@@ -134,10 +151,10 @@ public sealed class ChessGame
         return true;
     }
 
-    private bool TryFindMove(AlgebraicMove move, out int encoded)
+    private bool TryFindMove(CoordinateMove move, out int encoded)
     {
         encoded = 0;
-        if (!move.IsValid()) return false;
+        if (!move.IsValid) return false;
         foreach (int candidate in LegalMoves(position))
         {
             if (ToPublicMove(candidate) != move) continue;
@@ -147,9 +164,8 @@ public sealed class ChessGame
         return false;
     }
 
-    private static AlgebraicMove ToPublicMove(int move) => new(BinaryMoveOps.DecodeSrc(move),
-        BinaryMoveOps.DecodeTrg(move), BinaryMoveOps.DecodePromotion(move) == Promotions.None
-            ? PieceValue.None : (PieceValue)BinaryMoveOps.DecodePromotion(move));
+    private static CoordinateMove ToPublicMove(int move) => new(new Square(BinaryMoveOps.DecodeSrc(move)),
+        new Square(BinaryMoveOps.DecodeTrg(move)), BinaryMoveOps.DecodePromotion(move).ToPublicPromotion());
 
     private static List<int> LegalMoves(Position p)
     {
@@ -182,7 +198,7 @@ public sealed class ChessGame
         if (legalCount == 0)
         {
             if (!p.IsKingChecked()) return Draw(FinishReason.Stalemate);
-            PieceColor winner = (PieceColor)Colors.Mirror(p.color);
+            PieceColor winner = Colors.Mirror(p.color).ToPublicColor();
             return new(winner == PieceColor.White ? GameResult.WhiteWin : GameResult.BlackWin, winner, FinishReason.Checkmate);
         }
         if (IsBasicDeadPosition(p)) return Draw(FinishReason.DeadPosition);
@@ -209,4 +225,9 @@ public sealed class ChessGame
         chessGame = FenStrings.TryParse(fen, out var position) ? new ChessGame(position) : null;
         return chessGame is not null;
     }
+
+    /// <summary>Creates a game from a valid six-field Forsyth-Edwards Notation string.</summary>
+    /// <exception cref="FormatException">The FEN does not describe a valid standard-chess position.</exception>
+    public static ChessGame FromFen(string fen)
+        => TryCreateFromFen(fen, out var game) ? game : throw new FormatException("Invalid standard-chess FEN.");
 }

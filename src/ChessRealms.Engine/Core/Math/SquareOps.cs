@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace ChessRealms.Engine.Core.Math;
 
-public static class SquareOps
+internal static class SquareOps
 {
     public const int MinFileRank = 0;
     public const int MaxFileRank = 7;

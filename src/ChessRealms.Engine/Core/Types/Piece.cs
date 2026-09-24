@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace ChessRealms.Engine.Core.Types;
 
-public readonly struct Piece(int piece, int color)
+internal readonly struct Piece(int piece, int color)
 {
     public readonly int Value = piece;
     public readonly int Color = color;

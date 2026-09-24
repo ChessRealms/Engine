@@ -12,4 +12,9 @@
     <ProjectReference Include="..\ChessRealms.Engine\ChessRealms.Engine.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="ChessRealms.Engine.Tests" />
+    <InternalsVisibleTo Include="ChessRealms.Engine.Benchmark" />
+  </ItemGroup>
+
 </Project>

@@ -1,14 +1,14 @@
 # Game API and rule boundaries
 
 `ChessGame` is a mutable, sealed standard-chess game. A new game starts at the
-usual position; `TryCreateFromFen` starts from a supplied position. The game
-generates legal moves, applies them, records successful moves and classifies
-endings. Move generation uses bitboards and magic attack tables; pseudolegal
-moves are filtered for king safety.
+usual position; `FromFen` and `TryCreateFromFen` start from a supplied position.
+The game generates legal moves, applies them, records successful moves and
+classifies endings. Move generation uses bitboards and magic attack tables;
+pseudolegal moves are filtered for king safety.
 
 ## Moves, state and ownership
 
-- `AlgebraicMove.Parse` accepts lowercase coordinate moves such as `e2e4` and
+- `CoordinateMove.Parse` accepts lowercase coordinate moves such as `e2e4` and
   promotion moves ending in `q`, `r`, `b` or `n`. Parsing checks syntax; the game
   checks legality. Promotion has no default queen: `a7a8` is rejected if a
   promotion is required. `Parse` throws on malformed input; `TryParse` returns
@@ -19,7 +19,8 @@ moves are filtered for king safety.
   finished game without changing state; successful moves switch the side to
   move, including a checkmating move. Use `Outcome.Winner`, not the side to
   move, to identify the winner.
-- `Position` is a value snapshot. `History` is a read-only snapshot of successful
+- `GetPiece(Square)` reads one square. `CopyBoardTo(Span<ChessPiece>)` copies all
+  64 squares in a1-to-h8 order. `History` is a read-only snapshot of successful
   moves with the move, FEN before/after and move flags. `UndoMove()` restores
   the previous position, repetition count and outcome, including after a
   terminal move or a draw claim made after that move. It returns false if there
@@ -32,8 +33,10 @@ moves are filtered for king safety.
 
 `MoveResult` describes a successful move (`Move`, `Capture`, `Check`,
 `Checkmate`, `Stalemate`); `Outcome` describes the game result and finish
-reason. Loaded positions are classified immediately. `GetBoardToSpan` requires
-64 entries in a1-to-h8 order, with `ChessPiece.Empty` for vacant squares.
+reason. Loaded positions are classified immediately. `CopyBoardTo` requires a
+destination of at least 64 entries, with `ChessPiece.Empty` for vacant squares.
+The raw bitboard position is deliberately not exposed; use FEN, board inspection,
+legal moves, history and `Clone()` for consumer scenarios.
 
 ## FEN validation
 
@@ -52,9 +55,9 @@ target does not require an adjacent capturing pawn. Export records a target
 after every double push. Validation does not prove historical reachability.
 
 Invalid `TryCreateFromFen` input returns false with a null game; it never
-substitutes the starting position. `new ChessGame(position)` and
-`FenStrings.Format(position)` throw `ArgumentException` for invalid positions.
-A FEN import begins with one occurrence and no move history.
+substitutes the starting position. `FromFen` throws `FormatException` for invalid
+input. A FEN import begins with one occurrence and no move history. The standard
+starting FEN is available as `ChessGame.StartingFen`.
 
 ## Draws and repetition
 
