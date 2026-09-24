@@ -35,14 +35,36 @@ public readonly record struct CoordinateMove
 
     /// <summary>Parses lowercase long algebraic/coordinate notation such as <c>e2e4</c> or <c>a7a8q</c>.</summary>
     public static CoordinateMove Parse(ReadOnlySpan<char> text)
-        => TryParse(text, out var move) ? move : throw new FormatException("Expected e2e4 or a7a8q/r/b/n.");
+    {
+        return TryParse(text, out var move)
+            ? move
+            : throw new FormatException("Expected e2e4 or a7a8q/r/b/n.");
+    }
 
     /// <summary>Tries to parse lowercase long algebraic/coordinate notation.</summary>
     public static bool TryParse(ReadOnlySpan<char> text, out CoordinateMove move)
     {
         move = default;
-        if (text.Length is not (4 or 5) || !Square.TryParse(text[..2], out var source)
-            || !Square.TryParse(text.Slice(2, 2), out var target) || source == target) return false;
+
+        if (text.Length is not (4 or 5))
+        {
+            return false;
+        }
+
+        if (!Square.TryParse(text[..2], out var source))
+        {
+            return false;
+        }
+
+        if (!Square.TryParse(text.Slice(2, 2), out var target))
+        {
+            return false;
+        }
+
+        if (source == target)
+        {
+            return false;
+        }
 
         PieceValue promotion = PieceValue.None;
         if (text.Length == 5)
@@ -55,7 +77,11 @@ public readonly record struct CoordinateMove
                 'n' => PieceValue.Knight,
                 _ => PieceValue.None
             };
-            if (promotion == PieceValue.None) return false;
+
+            if (promotion == PieceValue.None)
+            {
+                return false;
+            }
         }
 
         move = new(source, target, promotion);
