@@ -33,7 +33,7 @@ public sealed class GameRecord
         ArgumentNullException.ThrowIfNull(chessGame);
 
         var fen = chessGame.InitialFen;
-        var moves = chessGame.History.Select(x => x.Move).ToArray();
+        var moves = chessGame.History.Select(entry => entry.Move).ToArray();
         DrawClaimRecord? drawClaim = chessGame.Outcome.Reason switch
         {
             FinishReason.ThreefoldRepetition => new(ChessRealms.Engine.DrawClaim.ThreefoldRepetition,

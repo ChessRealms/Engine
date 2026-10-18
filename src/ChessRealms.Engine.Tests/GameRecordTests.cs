@@ -228,6 +228,8 @@ internal class GameRecordTests
     private static void Play(ChessGame game, string text)
     {
         foreach (var move in Moves(text))
+        {
             Assert.That(game.MakeMove(move), Is.Not.EqualTo(MoveResult.None), move.ToString());
+        }
     }
 }

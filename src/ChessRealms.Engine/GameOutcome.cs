@@ -1,10 +1,27 @@
 namespace ChessRealms.Engine;
 
-public enum GameState { Active, Check, Finished }
-public enum GameResult { Ongoing, WhiteWin, BlackWin, Draw }
+public enum GameState
+{
+    Active,
+    Check,
+    Finished
+}
+
+public enum GameResult
+{
+    Ongoing,
+    WhiteWin,
+    BlackWin,
+    Draw
+}
 
 [Flags]
-public enum DrawClaim { None = 0, ThreefoldRepetition = 1, FiftyMoveRule = 2 }
+public enum DrawClaim
+{
+    None = 0,
+    ThreefoldRepetition = 1,
+    FiftyMoveRule = 2
+}
 
 public readonly record struct GameOutcome(GameResult Result, PieceColor Winner, FinishReason Reason)
 {

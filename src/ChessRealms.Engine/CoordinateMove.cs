@@ -9,12 +9,26 @@ public readonly record struct CoordinateMove
     /// <exception cref="ArgumentException">A square or promotion value is invalid.</exception>
     public CoordinateMove(Square source, Square target, PieceValue promotion = PieceValue.None)
     {
-        if (!source.IsValid) throw new ArgumentException("A valid source square is required.", nameof(source));
-        if (!target.IsValid) throw new ArgumentException("A valid target square is required.", nameof(target));
-        if (source == target) throw new ArgumentException("Source and target squares must differ.", nameof(target));
+        if (!source.IsValid)
+        {
+            throw new ArgumentException("A valid source square is required.", nameof(source));
+        }
+
+        if (!target.IsValid)
+        {
+            throw new ArgumentException("A valid target square is required.", nameof(target));
+        }
+
+        if (source == target)
+        {
+            throw new ArgumentException("Source and target squares must differ.", nameof(target));
+        }
+
         if (promotion is not (PieceValue.None or PieceValue.Queen or PieceValue.Rook
             or PieceValue.Bishop or PieceValue.Knight))
+        {
             throw new ArgumentException("Promotion must be a queen, rook, bishop, knight, or none.", nameof(promotion));
+        }
 
         Source = source;
         Target = target;
@@ -89,13 +103,22 @@ public readonly record struct CoordinateMove
     }
 
     /// <inheritdoc />
-    public override string ToString() => !IsValid ? string.Empty :
-        SquareOps.ToAbbreviature(Source.Index) + SquareOps.ToAbbreviature(Target.Index) + (Promotion switch
+    public override string ToString()
+    {
+        if (!IsValid)
+        {
+            return string.Empty;
+        }
+
+        string promotionSuffix = Promotion switch
         {
             PieceValue.Queen => "q",
             PieceValue.Rook => "r",
             PieceValue.Bishop => "b",
             PieceValue.Knight => "n",
             _ => string.Empty
-        });
+        };
+
+        return SquareOps.ToAbbreviature(Source.Index) + SquareOps.ToAbbreviature(Target.Index) + promotionSuffix;
+    }
 }

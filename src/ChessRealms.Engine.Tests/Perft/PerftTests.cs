@@ -29,8 +29,10 @@ internal class PerftTests
             for (int depth = 1; depth <= nodes.Length; depth++)
             {
                 if ((depth > 3) == deep)
+                {
                     yield return new TestCaseData(fen, depth, nodes[depth - 1])
                         .SetName($"{(deep ? "Deep" : "Fast")}_{name}_Depth{depth}");
+                }
             }
         }
     }

@@ -7,7 +7,11 @@ public readonly record struct Square
 
     internal Square(int index)
     {
-        if (index is < 0 or >= 64) throw new ArgumentOutOfRangeException(nameof(index));
+        if (index is < 0 or >= 64)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
         encodedIndex = (byte)(index + 1);
     }
 
@@ -24,7 +28,10 @@ public readonly record struct Square
     public static bool TryParse(ReadOnlySpan<char> text, out Square square)
     {
         square = default;
-        if (text.Length != 2 || text[0] is < 'a' or > 'h' || text[1] is < '1' or > '8') return false;
+        if (text.Length != 2 || text[0] is < 'a' or > 'h' || text[1] is < '1' or > '8')
+        {
+            return false;
+        }
 
         square = new((text[1] - '1') * 8 + text[0] - 'a');
         return true;

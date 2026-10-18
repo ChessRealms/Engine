@@ -10,14 +10,20 @@ internal class CompleteGameRulesTests
 {
     private static ChessGame Game(string fen)
     {
-        if (!ChessGame.TryCreateFromFen(fen, out var game)) Assert.Fail("Invalid fixture: " + fen);
+        if (!ChessGame.TryCreateFromFen(fen, out var game))
+        {
+            Assert.Fail("Invalid fixture: " + fen);
+        }
+
         return game!;
     }
 
     private static void Play(ChessGame game, string moves)
     {
         foreach (string move in moves.Split(' '))
+        {
             Assert.That(game.MakeMove(CoordinateMove.Parse(move)), Is.Not.EqualTo(MoveResult.None), move);
+        }
     }
 
     private static string State(ChessGame game) => string.Join("|", game.ToFen(), game.Outcome, game.State,
@@ -87,7 +93,10 @@ internal class CompleteGameRulesTests
         string before = State(game);
         foreach (var move in new[] { default(CoordinateMove), CoordinateMove.Parse("e7e5q"),
             CoordinateMove.Parse("e2e4") })
+        {
             Assert.That(game.MakeMove(move), Is.EqualTo(MoveResult.None));
+        }
+
         Assert.Throws<ArgumentException>(() => new CoordinateMove(new Square(Squares.e7),
             new Square(Squares.e5), (PieceValue)99));
         var history = (IList<MoveHistoryEntry>)game.History;

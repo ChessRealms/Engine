@@ -7,9 +7,14 @@ public readonly record struct ChessPiece
     public ChessPiece(PieceColor color, PieceValue value)
     {
         if (color is not (PieceColor.White or PieceColor.Black))
+        {
             throw new ArgumentException("A piece must be white or black.", nameof(color));
+        }
+
         if (value is < PieceValue.Pawn or > PieceValue.King)
+        {
             throw new ArgumentException("A valid piece value is required.", nameof(value));
+        }
 
         Color = color;
         Value = value;

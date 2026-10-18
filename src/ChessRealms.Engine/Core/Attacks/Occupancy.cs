@@ -24,7 +24,9 @@ internal static class Occupancy
             attackMask = BitboardOps.PopBitAt(attackMask, square);
 
             if ((occupancyIndex & 1 << i) != 0)
+            {
                 occupancy = BitboardOps.SetBitAt(occupancy, square);
+            }
         }
 
         return occupancy;

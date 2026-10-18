@@ -14,9 +14,21 @@ while (true)
     Console.WriteLine("Draw claims: {0}", chessGame.AvailableDrawClaims);
     Console.Write("> ");
     string? input = Console.ReadLine();
-    if (input is null || input == "quit") break;
-    if (input == "fen") { Console.WriteLine(chessGame.ToFen()); continue; }
-    if (input == "moves") { Console.WriteLine(string.Join(" ", chessGame.GetLegalMoves())); continue; }
+    if (input is null || input == "quit")
+    {
+        break;
+    }
+
+    if (input == "fen")
+    {
+        Console.WriteLine(chessGame.ToFen());
+        continue;
+    }
+    if (input == "moves")
+    {
+        Console.WriteLine(string.Join(" ", chessGame.GetLegalMoves()));
+        continue;
+    }
     if (input == "undo")
     {
         Console.WriteLine(chessGame.UndoMove() ? "Move undone." : "No move to undo.");
@@ -35,7 +47,10 @@ while (true)
     }
     bool success = CoordinateMove.TryParse(input, out var move)
         && (lastMoveResult = chessGame.MakeMove(move)) != MoveResult.None;
-    if (!success) Console.WriteLine("Invalid move or game already finished.");
+    if (!success)
+    {
+        Console.WriteLine("Invalid move or game already finished.");
+    }
 }
 static void PrintBoard(ChessGame chessGame)
 {

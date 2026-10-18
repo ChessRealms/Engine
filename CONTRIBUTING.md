@@ -34,6 +34,11 @@ Use UTF-8, LF line endings and a final newline, as configured by `.editorconfig`
 and `.gitattributes`. Preserve public API compatibility unless a change
 explicitly calls for a breaking release.
 
+Use braces for all control-flow bodies, including single statements, and expand
+these blocks onto separate lines. Keep simple auto-properties and short
+expression-bodied members compact when they remain easy to read. The build
+reports missing braces through `IDE0011`.
+
 Use `<type>/<short-description>` branch names and
 `<type>(<scope>): <imperative summary>` commit and PR titles. Common types are
 `feature` (title type `feat`), `fix`, `docs`, `test`, `refactor`, `perf`, `ci`

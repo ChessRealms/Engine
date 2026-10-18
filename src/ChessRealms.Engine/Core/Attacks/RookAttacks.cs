@@ -18,7 +18,7 @@ internal static unsafe class RookAttacks
     public static readonly ulong[] AttackMasks;
     public static readonly ulong* AttackMasksPtr;
 
-    public static readonly int[] RelevantBits = 
+    public static readonly int[] RelevantBits =
     [
          12, 11, 11, 11, 11, 11, 11, 12,
          11, 10, 10, 10, 10, 10, 10, 11,
@@ -31,7 +31,7 @@ internal static unsafe class RookAttacks
     ];
     public static readonly int* RelevantBitsPtr;
 
-    private static readonly ulong[] MagicNumbers = 
+    private static readonly ulong[] MagicNumbers =
     [
         0x0C80108004400020,
         0x0240002000100042,
@@ -114,7 +114,7 @@ internal static unsafe class RookAttacks
             for (int index = 0; index < occupancyIndicies; ++index)
             {
                 ulong occupancy = Occupancy.CreateAtIndex(index, RelevantBits[square], AttackMasks[square]);
-                
+
                 int magicIndex = (int)((occupancy * MagicNumbers[square]) >> (64 - RelevantBits[square]));
 
                 ulong mask = MaskRookSliderAttackOnTheFly(square, occupancy);
@@ -123,7 +123,7 @@ internal static unsafe class RookAttacks
             }
         }
 
-        
+
         AttackMasksPtr = (ulong*)GCHandle.Alloc(AttackMasks, GCHandleType.Pinned).AddrOfPinnedObject().ToPointer();
         SliderAttacksPtr = (ulong*)GCHandle.Alloc(SliderAttacks, GCHandleType.Pinned).AddrOfPinnedObject().ToPointer();
         RelevantBitsPtr = (int*)GCHandle.Alloc(RelevantBits, GCHandleType.Pinned).AddrOfPinnedObject().ToPointer();
@@ -162,7 +162,7 @@ internal static unsafe class RookAttacks
 
         ulong attacks = 0UL;
 
-        
+
         for (int r = SquareOps.Rank(square) + 1, f = SquareOps.File(square); r <= 6; ++r)
         {
             attacks |= SquareOps.ToBitboard(SquareOps.FromFileRank(f, r));
@@ -203,7 +203,9 @@ internal static unsafe class RookAttacks
             ulong squareAtBoard = SquareOps.ToBitboard(SquareOps.FromFileRank(f, r));
             attacks |= squareAtBoard;
             if ((squareAtBoard & blockers) != 0)
+            {
                 break;
+            }
         }
 
         for (r = SquareOps.Rank(square) - 1; r >= 0; --r)
@@ -211,7 +213,9 @@ internal static unsafe class RookAttacks
             ulong squareAtBoard = SquareOps.ToBitboard(SquareOps.FromFileRank(f, r));
             attacks |= squareAtBoard;
             if ((squareAtBoard & blockers) != 0)
+            {
                 break;
+            }
         }
 
         r = SquareOps.Rank(square);
@@ -221,7 +225,9 @@ internal static unsafe class RookAttacks
             ulong squareAtBoard = SquareOps.ToBitboard(SquareOps.FromFileRank(f, r));
             attacks |= squareAtBoard;
             if ((squareAtBoard & blockers) != 0)
+            {
                 break;
+            }
         }
 
         for (f = SquareOps.File(square) - 1; f >= 0; --f)
@@ -229,7 +235,9 @@ internal static unsafe class RookAttacks
             ulong board = SquareOps.ToBitboard(SquareOps.FromFileRank(f, r));
             attacks |= board;
             if ((board & blockers) != 0)
+            {
                 break;
+            }
         }
 
         return attacks;

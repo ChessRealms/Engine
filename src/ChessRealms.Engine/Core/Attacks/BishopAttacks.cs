@@ -18,7 +18,7 @@ internal static unsafe class BishopAttacks
     public static readonly ulong[] AttackMasks;
     public static readonly ulong* AttackMasksPtr;
 
-    public static readonly int[] RelevantBits = 
+    public static readonly int[] RelevantBits =
     [
          6, 5, 5, 5, 5, 5, 5, 6,
          5, 5, 5, 5, 5, 5, 5, 5,
@@ -31,7 +31,7 @@ internal static unsafe class BishopAttacks
     ];
     public static readonly int* RelevantBitsPtr;
 
-    public static readonly ulong[] MagicNumbers = 
+    public static readonly ulong[] MagicNumbers =
     [
         0x0002100148088080,
         0x24502C0B20620000,
@@ -108,13 +108,13 @@ internal static unsafe class BishopAttacks
         for (int square = 0; square < 64; ++square)
         {
             AttackMasks[square] = MaskBishopAttack(square);
-            
+
             int occupancyIndicies = 1 << RelevantBits[square];
 
             for (int index = 0; index < occupancyIndicies; ++index)
             {
                 ulong occupancy = Occupancy.CreateAtIndex(index, RelevantBits[square], AttackMasks[square]);
-                
+
                 int magicIndex = (int)((occupancy * MagicNumbers[square]) >> (64 - RelevantBits[square]));
 
                 ulong mask = MaskBishopSliderAttackOnTheFly(square, occupancy);
@@ -162,27 +162,35 @@ internal static unsafe class BishopAttacks
 
         r = SquareOps.Rank(square) + 1;
         f = SquareOps.File(square) + 1;
-        
+
         while (r <= 6 && f <= 6)
+        {
             attacks |= SquareOps.ToBitboard(SquareOps.FromFileRank(f++, r++));
+        }
 
         r = SquareOps.Rank(square) - 1;
         f = SquareOps.File(square) + 1;
-        
+
         while (r >= 1 && f <= 6)
+        {
             attacks |= SquareOps.ToBitboard(SquareOps.FromFileRank(f++, r--));
+        }
 
         r = SquareOps.Rank(square) + 1;
         f = SquareOps.File(square) - 1;
-        
+
         while (r <= 6 && f >= 1)
+        {
             attacks |= SquareOps.ToBitboard(SquareOps.FromFileRank(f--, r++));
+        }
 
         r = SquareOps.Rank(square) - 1;
         f = SquareOps.File(square) - 1;
 
         while (r >= 1 && f >= 1)
+        {
             attacks |= SquareOps.ToBitboard(SquareOps.FromFileRank(f--, r--));
+        }
 
         return attacks;
     }
@@ -206,7 +214,9 @@ internal static unsafe class BishopAttacks
             ulong squareAtBoard = SquareOps.ToBitboard(SquareOps.FromFileRank(f++, r++));
             attacks |= squareAtBoard;
             if ((squareAtBoard & blockers) != 0)
+            {
                 break;
+            }
         }
 
         r = SquareOps.Rank(square) - 1;
@@ -217,7 +227,9 @@ internal static unsafe class BishopAttacks
             ulong squareAtBoard = SquareOps.ToBitboard(SquareOps.FromFileRank(f++, r--));
             attacks |= squareAtBoard;
             if ((squareAtBoard & blockers) != 0)
+            {
                 break;
+            }
         }
 
         r = SquareOps.Rank(square) + 1;
@@ -228,7 +240,9 @@ internal static unsafe class BishopAttacks
             ulong squareAtBoard = SquareOps.ToBitboard(SquareOps.FromFileRank(f--, r++));
             attacks |= squareAtBoard;
             if ((squareAtBoard & blockers) != 0)
+            {
                 break;
+            }
         }
 
         r = SquareOps.Rank(square) - 1;
@@ -239,7 +253,9 @@ internal static unsafe class BishopAttacks
             ulong squareAtBoard = SquareOps.ToBitboard(SquareOps.FromFileRank(f--, r--));
             attacks |= squareAtBoard;
             if ((squareAtBoard & blockers) != 0)
+            {
                 break;
+            }
         }
 
         return attacks;

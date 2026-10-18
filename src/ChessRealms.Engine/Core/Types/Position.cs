@@ -9,7 +9,6 @@ using System.Numerics;
 
 namespace ChessRealms.Engine.Core.Types;
 
-
 /// <summary>A value snapshot. Assignment copies bitboards; its BigInteger counters are immutable.</summary>
 internal struct Position : IEquatable<Position>
 {
@@ -25,8 +24,22 @@ internal struct Position : IEquatable<Position>
 
     public bool Equals(Position other)
     {
-        for (int i = 0; i < 12; i++) if (pieceBBs[i] != other.pieceBBs[i]) return false;
-        for (int i = 0; i < 3; i++) if (blockers[i] != other.blockers[i]) return false;
+        for (int i = 0; i < 12; i++)
+        {
+            if (pieceBBs[i] != other.pieceBBs[i])
+            {
+                return false;
+            }
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (blockers[i] != other.blockers[i])
+            {
+                return false;
+            }
+        }
+
         return color == other.color && castlings == other.castlings && enpassant == other.enpassant
             && fullMoveCount == other.fullMoveCount && halfMoveClock == other.halfMoveClock;
     }
@@ -35,10 +48,21 @@ internal struct Position : IEquatable<Position>
     public override int GetHashCode()
     {
         HashCode hash = new();
-        for (int i = 0; i < 12; i++) hash.Add(pieceBBs[i]);
-        for (int i = 0; i < 3; i++) hash.Add(blockers[i]);
-        hash.Add(color); hash.Add(castlings); hash.Add(enpassant);
-        hash.Add(fullMoveCount); hash.Add(halfMoveClock);
+        for (int i = 0; i < 12; i++)
+        {
+            hash.Add(pieceBBs[i]);
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+            hash.Add(blockers[i]);
+        }
+
+        hash.Add(color);
+        hash.Add(castlings);
+        hash.Add(enpassant);
+        hash.Add(fullMoveCount);
+        hash.Add(halfMoveClock);
         return hash.ToHashCode();
     }
 
@@ -59,8 +83,15 @@ internal struct Position : IEquatable<Position>
 
     public Piece GetPieceAt(int square, int color)
     {
-        if (!Squares.IsValid(square)) throw new ArgumentOutOfRangeException(nameof(square));
-        if (!Colors.IsValid(color)) throw new ArgumentOutOfRangeException(nameof(color));
+        if (!Squares.IsValid(square))
+        {
+            throw new ArgumentOutOfRangeException(nameof(square));
+        }
+
+        if (!Colors.IsValid(color))
+        {
+            throw new ArgumentOutOfRangeException(nameof(color));
+        }
 
         int bbIndex = BBIndex(Pieces.Pawn, color);
         int bbLastIndex = BBIndex(Pieces.King, color);
@@ -84,9 +115,16 @@ internal struct Position : IEquatable<Position>
 
     internal void SetPieceAt(int square, int piece, int color)
     {
-        if (!Squares.IsValid(square)) throw new ArgumentOutOfRangeException(nameof(square));
+        if (!Squares.IsValid(square))
+        {
+            throw new ArgumentOutOfRangeException(nameof(square));
+        }
+
         DebugHelper.Assert.IsValidPiece(piece);
-        if (!Colors.IsValid(color)) throw new ArgumentOutOfRangeException(nameof(color));
+        if (!Colors.IsValid(color))
+        {
+            throw new ArgumentOutOfRangeException(nameof(color));
+        }
 
         int bbIndex = BBIndex(piece, color);
         Debug.Assert(IsValidBBIndex(bbIndex));
@@ -98,9 +136,16 @@ internal struct Position : IEquatable<Position>
 
     internal void PopPieceAt(int square, int piece, int color)
     {
-        if (!Squares.IsValid(square)) throw new ArgumentOutOfRangeException(nameof(square));
+        if (!Squares.IsValid(square))
+        {
+            throw new ArgumentOutOfRangeException(nameof(square));
+        }
+
         DebugHelper.Assert.IsValidPiece(piece);
-        if (!Colors.IsValid(color)) throw new ArgumentOutOfRangeException(nameof(color));
+        if (!Colors.IsValid(color))
+        {
+            throw new ArgumentOutOfRangeException(nameof(color));
+        }
 
         int bbIndex = BBIndex(piece, color);
         Debug.Assert(IsValidBBIndex(bbIndex));
@@ -112,8 +157,15 @@ internal struct Position : IEquatable<Position>
 
     internal void PopPieceAt(int square, int color)
     {
-        if (!Squares.IsValid(square)) throw new ArgumentOutOfRangeException(nameof(square));
-        if (!Colors.IsValid(color)) throw new ArgumentOutOfRangeException(nameof(color));
+        if (!Squares.IsValid(square))
+        {
+            throw new ArgumentOutOfRangeException(nameof(square));
+        }
+
+        if (!Colors.IsValid(color))
+        {
+            throw new ArgumentOutOfRangeException(nameof(color));
+        }
 
         int i = BBIndex(Pieces.Pawn, color);
 
@@ -138,7 +190,10 @@ internal struct Position : IEquatable<Position>
     internal static int BBIndex(int piece, int color)
     {
         DebugHelper.Assert.IsValidPiece(piece);
-        if (!Colors.IsValid(color)) throw new ArgumentOutOfRangeException(nameof(color));
+        if (!Colors.IsValid(color))
+        {
+            throw new ArgumentOutOfRangeException(nameof(color));
+        }
 
         return (color * 6) + piece;
     }
@@ -147,7 +202,10 @@ internal struct Position : IEquatable<Position>
     internal static int PieceFromBBIndex(int bbIndex, int color)
     {
         Debug.Assert(IsValidBBIndex(bbIndex));
-        if (!Colors.IsValid(color)) throw new ArgumentOutOfRangeException(nameof(color));
+        if (!Colors.IsValid(color))
+        {
+            throw new ArgumentOutOfRangeException(nameof(color));
+        }
 
         return bbIndex - color * 6;
     }
@@ -160,7 +218,11 @@ internal struct Position : IEquatable<Position>
 
     public bool IsKingChecked()
     {
-        if (!PositionValidation.IsValid(this)) throw new InvalidOperationException("Invalid standard chess position.");
+        if (!PositionValidation.IsValid(this))
+        {
+            throw new InvalidOperationException("Invalid standard chess position.");
+        }
+
         return IsKingChecked(color);
     }
 
@@ -168,20 +230,19 @@ internal struct Position : IEquatable<Position>
     {
         if (kingColor == Colors.Black)
         {
-            int ks = BitboardOps.Lsb(pieceBBs[BitboardIndicies.BKing]);
+            int kingSquare = BitboardOps.Lsb(pieceBBs[BitboardIndicies.BKing]);
 
-            return IsSquareAttackedByWhite(ks);
+            return IsSquareAttackedByWhite(kingSquare);
         }
         else
         {
-            int ks = BitboardOps.Lsb(pieceBBs[BitboardIndicies.WKing]);
+            int kingSquare = BitboardOps.Lsb(pieceBBs[BitboardIndicies.WKing]);
 
-            return IsSquareAttackedByBlack(ks);
+            return IsSquareAttackedByBlack(kingSquare);
         }
     }
 
-    // Should run a bit faster than universal version
-    // that calculates Bitboard indicies.
+    // Color-specific helpers address the opponent's bitboards directly.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool IsSquareAttackedByWhite(int square)
     {
@@ -300,61 +361,65 @@ internal struct Position : IEquatable<Position>
     }
     #endregion
 
-    // Position assignment copies the inline bitboards; BigInteger is immutable.
-
     /// <summary>
-    /// Creates default position filled with setuped pieces at its default positions.
+    /// Creates the standard starting position.
     /// </summary>
-    /// <returns> Default Position. </returns>
     public static Position CreateDefault()
     {
-        const ulong bPawns      = SquareMapping.RANK_8 >> 8;
-        const ulong bKnights    = (1ul << Squares.b8) | (1ul << Squares.g8);
-        const ulong bBishops    = (1ul << Squares.c8) | (1ul << Squares.f8);
-        const ulong bRooks      = (1ul << Squares.a8) | (1ul << Squares.h8);
-        const ulong bQueen      = 1ul << Squares.d8;
-        const ulong bKing       = 1ul << Squares.e8;
-        const ulong bAll        = SquareMapping.RANK_8 | bPawns;
+        const ulong bPawns = SquareMapping.RANK_8 >> 8;
+        const ulong bKnights = (1ul << Squares.b8) | (1ul << Squares.g8);
+        const ulong bBishops = (1ul << Squares.c8) | (1ul << Squares.f8);
+        const ulong bRooks = (1ul << Squares.a8) | (1ul << Squares.h8);
+        const ulong bQueen = 1ul << Squares.d8;
+        const ulong bKing = 1ul << Squares.e8;
+        const ulong bAll = SquareMapping.RANK_8 | bPawns;
 
-        const ulong wPawns      = SquareMapping.RANK_1 << 8;
-        const ulong wKnights    = (1ul << Squares.b1) | (1ul << Squares.g1);
-        const ulong wBishops    = (1ul << Squares.c1) | (1ul << Squares.f1);
-        const ulong wRooks      = (1ul << Squares.a1) | (1ul << Squares.h1);
-        const ulong wQueen      = 1ul << Squares.d1;
-        const ulong wKing       = 1ul << Squares.e1;
-        const ulong wAll        = SquareMapping.RANK_1 | wPawns;
+        const ulong wPawns = SquareMapping.RANK_1 << 8;
+        const ulong wKnights = (1ul << Squares.b1) | (1ul << Squares.g1);
+        const ulong wBishops = (1ul << Squares.c1) | (1ul << Squares.f1);
+        const ulong wRooks = (1ul << Squares.a1) | (1ul << Squares.h1);
+        const ulong wQueen = 1ul << Squares.d1;
+        const ulong wKing = 1ul << Squares.e1;
+        const ulong wAll = SquareMapping.RANK_1 | wPawns;
 
         Position position = new();
 
-        position.pieceBBs[BitboardIndicies.BPawn]   = bPawns;
+        position.pieceBBs[BitboardIndicies.BPawn] = bPawns;
         position.pieceBBs[BitboardIndicies.BKnight] = bKnights;
         position.pieceBBs[BitboardIndicies.BBishop] = bBishops;
-        position.pieceBBs[BitboardIndicies.BRook]   = bRooks;
-        position.pieceBBs[BitboardIndicies.BQueen]  = bQueen;
-        position.pieceBBs[BitboardIndicies.BKing]   = bKing;
+        position.pieceBBs[BitboardIndicies.BRook] = bRooks;
+        position.pieceBBs[BitboardIndicies.BQueen] = bQueen;
+        position.pieceBBs[BitboardIndicies.BKing] = bKing;
 
-        position.pieceBBs[BitboardIndicies.WPawn]   = wPawns;
+        position.pieceBBs[BitboardIndicies.WPawn] = wPawns;
         position.pieceBBs[BitboardIndicies.WKnight] = wKnights;
         position.pieceBBs[BitboardIndicies.WBishop] = wBishops;
-        position.pieceBBs[BitboardIndicies.WRook]   = wRooks;
-        position.pieceBBs[BitboardIndicies.WQueen]  = wQueen;
-        position.pieceBBs[BitboardIndicies.WKing]   = wKing;
+        position.pieceBBs[BitboardIndicies.WRook] = wRooks;
+        position.pieceBBs[BitboardIndicies.WQueen] = wQueen;
+        position.pieceBBs[BitboardIndicies.WKing] = wKing;
 
-        position.blockers[BitboardIndicies.BBlockers]   = bAll;
-        position.blockers[BitboardIndicies.WBlockers]   = wAll;
+        position.blockers[BitboardIndicies.BBlockers] = bAll;
+        position.blockers[BitboardIndicies.WBlockers] = wAll;
         position.blockers[BitboardIndicies.AllBlockers] = bAll | wAll;
 
-        position.color          = Colors.White;
-        position.castlings      = Castlings.All;
-        position.enpassant      = Squares.Empty;
-        position.fullMoveCount  = 1;
-        position.halfMoveClock  = 0;
+        position.color = Colors.White;
+        position.castlings = Castlings.All;
+        position.enpassant = Squares.Empty;
+        position.fullMoveCount = 1;
+        position.halfMoveClock = 0;
 
         return position;
     }
 }
+
 [InlineArray(12)]
-internal struct PieceBoards { private ulong first; }
+internal struct PieceBoards
+{
+    private ulong first;
+}
 
 [InlineArray(3)]
-internal struct OccupancyBoards { private ulong first; }
+internal struct OccupancyBoards
+{
+    private ulong first;
+}

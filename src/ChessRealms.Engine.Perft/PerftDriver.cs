@@ -53,7 +53,9 @@ namespace Perft
                     perftResult.Nodes += 1;
 
                     if (BinaryMoveOps.DecodeCapture(moves[i]) != 0)
+                    {
                         perftResult.Captures += 1;
+                    }
 
                     if (BinaryMoveOps.DecodeEnpassant(moves[i]) != 0)
                     {
@@ -61,10 +63,14 @@ namespace Perft
                     }
 
                     if (BinaryMoveOps.DecodeCastling(moves[i]) != 0)
+                    {
                         perftResult.Castles += 1;
+                    }
 
                     if (BinaryMoveOps.DecodePromotion(moves[i]) != 0)
+                    {
                         perftResult.Promotions += 1;
+                    }
                 }
 
                 return perftResult;
