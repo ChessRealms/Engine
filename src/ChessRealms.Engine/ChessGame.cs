@@ -68,6 +68,11 @@ public sealed class ChessGame
     /// <summary>Exports an independent snapshot of the starting position, current move line and draw claim.</summary>
     public GameRecord ExportRecord() => GameRecord.CreateFromGame(this);
 
+    /// <summary>Restores an independent game by replaying the record's moves and applying its draw claim.</summary>
+    /// <exception cref="ArgumentNullException">The record is null.</exception>
+    /// <exception cref="FormatException">The initial FEN, a recorded move or the draw claim is invalid.</exception>
+    public static ChessGame FromRecord(GameRecord gameRecord) => GameRecord.RestoreGame(gameRecord);
+
     /// <summary>Copies the board in a1-to-h8 order.</summary>
     public void CopyBoardTo(Span<ChessPiece> destination)
     {

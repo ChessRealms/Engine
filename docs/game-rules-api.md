@@ -38,7 +38,7 @@ destination of at least 64 entries, with `ChessPiece.Empty` for vacant squares.
 The raw bitboard position is deliberately not exposed; use FEN, board inspection,
 legal moves, history and `Clone()` for consumer scenarios.
 
-## Game record export
+## Game record export and restoration
 
 `ExportRecord()` creates an independent, immutable `GameRecord` containing the
 game's initial FEN, its current line of successful coordinate moves, and a
@@ -52,6 +52,7 @@ position; it cannot recover moves preceding the import.
 var game = new ChessGame();
 game.MakeMove(CoordinateMove.Parse("e2e4"));
 GameRecord record = game.ExportRecord();
+ChessGame restored = ChessGame.FromRecord(record);
 ```
 
 `record.DrawClaim` is null for ongoing games and automatic endings. A successful
@@ -61,9 +62,22 @@ position has a null intended move. `ChessGame.DrawIntendedMove` exposes the
 intended move of a successful claim, is copied by `Clone()`, and is cleared by a
 successful `UndoMove()`. A failed undo leaves the claim unchanged.
 
-This API currently exports an in-memory record only; restoration and JSON
-serialization are not implemented. `GameRecord.SchemaVersion` identifies the
-record schema and is independent of the package version.
+`ChessGame.FromRecord(record)` creates an independent game from the initial FEN,
+replays each move through `MakeMove`, then applies the optional claim through
+`ClaimDraw`. This rebuilds history, repetition counts, available draw claims and
+the outcome, including automatic endings. The intended move of a claim remains
+unplayed. The restored game supports continued play and `UndoMove` with the same
+rules as the original game.
+
+A null record throws `ArgumentNullException`. An invalid initial FEN, an
+unplayable move (including a move after the game has finished), or an invalid or
+unavailable draw claim throws `FormatException`. Move errors identify the
+zero-based index in `record.Moves`. Restoration returns a game only after the
+whole record succeeds; it does not change the record or the original game.
+
+Records currently remain in memory; JSON serialization is not implemented.
+`GameRecord.SchemaVersion` identifies the record schema and is independent of
+the package version.
 
 ## FEN validation
 
