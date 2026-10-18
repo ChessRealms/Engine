@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/assets/">
+    <File Path="assets/chessrealms-emblem-128.png" />
+  </Folder>
   <Folder Name="/docs/" Id="a576d511-a7dd-48da-89d2-a534742656e6">
     <File Path="docs/game-rules-api.md" />
     <File Path="docs/performance.md" />

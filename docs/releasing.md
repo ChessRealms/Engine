@@ -50,6 +50,16 @@ the leading `v`; its stable core must still match `VersionPrefix`. Manual runs
 validate, restore, build, test, pack, inspect, and consume the package, but cannot
 publish or create a GitHub Release.
 
+## Package icon
+
+The package embeds `assets/chessrealms-emblem-128.png` as
+`chessrealms-emblem-128.png` and references it through `PackageIcon`. This is the
+unchanged 128x128 PNG emblem with transparent corners from the
+[ChessRealms organization assets](https://github.com/ChessRealms/.github/blob/83657d5120b3ae8c0d2acdb5af59c2c079e7c518/profile/assets/png/chessrealms-emblem-128.png).
+The local copy makes package builds independent of the branding repository's
+availability. `Verify-Package.ps1` checks both the icon metadata and its presence
+in the package. Keep those checks in sync if the filename changes.
+
 ## Versioning policy
 
 - PATCH releases contain backward-compatible fixes and internal improvements.

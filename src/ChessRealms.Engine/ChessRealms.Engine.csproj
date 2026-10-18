@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>ChessRealms.Engine</PackageId>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>1.1.0</VersionPrefix>
     <Title>ChessRealms.Engine</Title>
     <Description>A reusable .NET library for standard chess positions, legal move generation, game state, history, undo, FEN, and standard game-ending rules.</Description>
     <Authors>ChessRealms</Authors>
@@ -16,6 +16,7 @@
     <RepositoryUrl>https://github.com/ChessRealms/Engine.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>chessrealms-emblem-128.png</PackageIcon>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <IncludeSymbols>true</IncludeSymbols>
@@ -35,5 +36,6 @@
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="\" />
+    <None Include="..\..\assets\chessrealms-emblem-128.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
