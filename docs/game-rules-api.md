@@ -38,6 +38,33 @@ destination of at least 64 entries, with `ChessPiece.Empty` for vacant squares.
 The raw bitboard position is deliberately not exposed; use FEN, board inspection,
 legal moves, history and `Clone()` for consumer scenarios.
 
+## Game record export
+
+`ExportRecord()` creates an independent, immutable `GameRecord` containing the
+game's initial FEN, its current line of successful coordinate moves, and a
+successful draw claim when one ended the game. Undone moves are excluded;
+continuing, undoing or cloning the game does not change an existing record.
+The move collection owns its data and cannot be modified through collection
+interfaces. A game created from FEN records only the history played since that
+position; it cannot recover moves preceding the import.
+
+```csharp
+var game = new ChessGame();
+game.MakeMove(CoordinateMove.Parse("e2e4"));
+GameRecord record = game.ExportRecord();
+```
+
+`record.DrawClaim` is null for ongoing games and automatic endings. A successful
+threefold-repetition or fifty-move claim stores its reason and optional intended
+move. That intended move is not part of `record.Moves`. A claim on the current
+position has a null intended move. `ChessGame.DrawIntendedMove` exposes the
+intended move of a successful claim, is copied by `Clone()`, and is cleared by a
+successful `UndoMove()`. A failed undo leaves the claim unchanged.
+
+This API currently exports an in-memory record only; restoration and JSON
+serialization are not implemented. `GameRecord.SchemaVersion` identifies the
+record schema and is independent of the package version.
+
 ## FEN validation
 
 FEN import requires exactly six fields separated by single ASCII spaces, with

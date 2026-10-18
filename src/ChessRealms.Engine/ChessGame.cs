@@ -14,6 +14,7 @@ public sealed class ChessGame
     public const string StartingFen = FenStrings.StartPosition;
 
     private Position position;
+    private readonly string initialFen;
     private readonly List<MoveHistoryEntry> history = [];
     private readonly List<Position> undo = [];
     private readonly List<string> keys = [];
@@ -22,9 +23,12 @@ public sealed class ChessGame
     public PieceColor CurrentColor => position.color.ToPublicColor();
     public PieceColor OpponentColor => Colors.Mirror(position.color).ToPublicColor();
     internal Position Position => position;
+    internal string InitialFen => initialFen;
     public BigInteger HalfmoveClock => position.halfMoveClock;
     public BigInteger FullmoveNumber => position.fullMoveCount;
     public GameOutcome Outcome { get; private set; } = GameOutcome.Ongoing;
+    /// <summary>The unplayed move of a successful intended-move draw claim, or null otherwise.</summary>
+    public CoordinateMove? DrawIntendedMove { get; private set; }
     public bool IsFinished => Outcome.Result != GameResult.Ongoing;
     public bool IsInCheck => position.IsKingChecked();
     public GameState State => IsFinished ? GameState.Finished : IsInCheck ? GameState.Check : GameState.Active;
@@ -38,6 +42,7 @@ public sealed class ChessGame
     {
         if (!PositionValidation.IsValid(position)) throw new ArgumentException("Invalid standard chess position.", nameof(position));
         this.position = position;
+        initialFen = FenStrings.Format(position);
         var moves = LegalMoves(position);
         string key = RepetitionKey(position, moves);
         keys.Add(key);
@@ -48,7 +53,9 @@ public sealed class ChessGame
     private ChessGame(ChessGame original)
     {
         position = original.position;
+        initialFen = original.initialFen;
         Outcome = original.Outcome;
+        DrawIntendedMove = original.DrawIntendedMove;
         history.AddRange(original.history);
         undo.AddRange(original.undo);
         keys.AddRange(original.keys);
@@ -57,6 +64,9 @@ public sealed class ChessGame
 
     public ChessGame Clone() => new(this);
     public string ToFen() => FenStrings.FormatUnchecked(position);
+
+    /// <summary>Exports an independent snapshot of the starting position, current move line and draw claim.</summary>
+    public GameRecord ExportRecord() => GameRecord.CreateFromGame(this);
 
     /// <summary>Copies the board in a1-to-h8 order.</summary>
     public void CopyBoardTo(Span<ChessPiece> destination)
@@ -127,6 +137,7 @@ public sealed class ChessGame
         undo.RemoveAt(undo.Count - 1);
         history.RemoveAt(history.Count - 1);
         Outcome = Evaluate(position, LegalMoves(position).Count, RepetitionCount);
+        DrawIntendedMove = null;
         return true;
     }
 
@@ -144,10 +155,21 @@ public sealed class ChessGame
     /// <summary>A valid intended-move claim ends the game at its current board; the move is not played.</summary>
     public bool ClaimDraw(DrawClaim reason, CoordinateMove? intendedMove = null)
     {
-        if (reason is not (DrawClaim.ThreefoldRepetition or DrawClaim.FiftyMoveRule)) return false;
+        if (reason is not (DrawClaim.ThreefoldRepetition or DrawClaim.FiftyMoveRule))
+        {
+            return false;
+        }
+
         DrawClaim available = intendedMove is { } move ? GetAvailableDrawClaims(move) : AvailableDrawClaims;
-        if ((available & reason) == 0) return false;
+
+        if ((available & reason) == 0)
+        {
+            return false;
+        }
+
         Outcome = Draw(reason == DrawClaim.ThreefoldRepetition ? FinishReason.ThreefoldRepetition : FinishReason.FiftyMoveRule);
+        DrawIntendedMove = intendedMove;
+
         return true;
     }
 

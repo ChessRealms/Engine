@@ -21,7 +21,7 @@ internal class CompleteGameRulesTests
     }
 
     private static string State(ChessGame game) => string.Join("|", game.ToFen(), game.Outcome, game.State,
-        game.RepetitionCount, game.AvailableDrawClaims, string.Join(";", game.History),
+        game.RepetitionCount, game.AvailableDrawClaims, game.DrawIntendedMove, string.Join(";", game.History),
         string.Join(",", game.GetLegalMoves()));
 
     private static ChessPiece At(ChessGame game, string square)
