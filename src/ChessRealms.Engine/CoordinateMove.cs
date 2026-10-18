@@ -1,9 +1,12 @@
 using ChessRealms.Engine.Core.Math;
+using ChessRealms.Engine.Json;
+using System.Text.Json.Serialization;
 
 namespace ChessRealms.Engine;
 
 /// <summary>A move written as source and target squares, with an explicit promotion when required.</summary>
-public readonly record struct CoordinateMove
+[JsonConverter(typeof(CoordinateMoveConverter))]
+public readonly record struct CoordinateMove : IUtf8SpanFormattable, IUtf8SpanParsable<CoordinateMove>
 {
     /// <summary>Creates a coordinate move.</summary>
     /// <exception cref="ArgumentException">A square or promotion value is invalid.</exception>
@@ -99,6 +102,73 @@ public readonly record struct CoordinateMove
         }
 
         move = new(source, target, promotion);
+        return true;
+    }
+
+    /// <summary>Parses lowercase UTF-8 coordinate notation. The provider is ignored.</summary>
+    public static CoordinateMove Parse(ReadOnlySpan<byte> utf8Text, IFormatProvider? provider = null)
+    {
+        return TryParse(utf8Text, provider, out var move)
+            ? move
+            : throw new FormatException("Expected e2e4 or a7a8q/r/b/n.");
+    }
+
+    /// <summary>Tries to parse lowercase UTF-8 coordinate notation.</summary>
+    public static bool TryParse(ReadOnlySpan<byte> utf8Text, out CoordinateMove move)
+        => TryParse(utf8Text, null, out move);
+
+    /// <summary>Tries to parse lowercase UTF-8 coordinate notation. The provider is ignored.</summary>
+    public static bool TryParse(ReadOnlySpan<byte> utf8Text, IFormatProvider? provider, out CoordinateMove move)
+    {
+        move = default;
+        if (utf8Text.Length is not (4 or 5))
+        {
+            return false;
+        }
+
+        // Coordinate notation is ASCII; the character parser rejects every non-ASCII byte.
+        Span<char> text = stackalloc char[utf8Text.Length];
+        for (int i = 0; i < utf8Text.Length; ++i)
+        {
+            text[i] = (char)utf8Text[i];
+        }
+
+        return TryParse(text, out move);
+    }
+
+    /// <summary>Writes lowercase coordinate notation as UTF-8 without allocating a string.</summary>
+    /// <remarks>Accepts an empty format or G/g and ignores the provider. Returns false without writing
+    /// for an invalid move or insufficient space. Other formats throw <see cref="FormatException"/>.</remarks>
+    public bool TryFormat(Span<byte> utf8Destination, out int bytesWritten,
+        ReadOnlySpan<char> format = default, IFormatProvider? provider = null)
+    {
+        bytesWritten = 0;
+        if (!format.IsEmpty && !format.SequenceEqual("G") && !format.SequenceEqual("g"))
+        {
+            throw new FormatException("Only the general coordinate move format is supported.");
+        }
+
+        int length = Promotion == PieceValue.None ? 4 : 5;
+        if (!IsValid || utf8Destination.Length < length)
+        {
+            return false;
+        }
+
+        Source.TryFormat(utf8Destination[..2], out _);
+        Target.TryFormat(utf8Destination.Slice(2, 2), out _);
+        if (Promotion != PieceValue.None)
+        {
+            utf8Destination[4] = Promotion switch
+            {
+                PieceValue.Queen => (byte)'q',
+                PieceValue.Rook => (byte)'r',
+                PieceValue.Bishop => (byte)'b',
+                PieceValue.Knight => (byte)'n',
+                _ => throw new InvalidOperationException("Invalid promotion piece.")
+            };
+        }
+
+        bytesWritten = length;
         return true;
     }
 

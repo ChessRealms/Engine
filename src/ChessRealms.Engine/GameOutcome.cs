@@ -1,3 +1,6 @@
+using ChessRealms.Engine.Json;
+using System.Text.Json.Serialization;
+
 namespace ChessRealms.Engine;
 
 public enum GameState
@@ -16,6 +19,7 @@ public enum GameResult
 }
 
 [Flags]
+[JsonConverter(typeof(DrawClaimConverter))]
 public enum DrawClaim
 {
     None = 0,

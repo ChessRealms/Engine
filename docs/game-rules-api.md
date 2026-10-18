@@ -13,6 +13,13 @@ pseudolegal moves are filtered for king safety.
   checks legality. Promotion has no default queen: `a7a8` is rejected if a
   promotion is required. `Parse` throws on malformed input; `TryParse` returns
   false.
+- `Square` and `CoordinateMove` also implement `IUtf8SpanParsable<T>` and
+  `IUtf8SpanFormattable`. For example, `CoordinateMove.Parse("e2e4"u8)` reads
+  UTF-8 notation and `move.TryFormat(buffer, out int written)` writes it into a
+  byte span. Formatting accepts an empty format or `G`/`g`; other formats throw
+  `FormatException`. Parsing and formatting are culture independent and ignore
+  the provider. An invalid default value or a short destination returns false
+  with zero bytes written and leaves the destination unchanged.
 - `GetLegalMoves()` returns a read-only snapshot for the current side, including
   all promotion choices. It is empty after the game finishes. Move order is
   unspecified. `MakeMove` returns `MoveResult.None` for illegal moves or a
@@ -75,9 +82,75 @@ unavailable draw claim throws `FormatException`. Move errors identify the
 zero-based index in `record.Moves`. Restoration returns a game only after the
 whole record succeeds; it does not change the record or the original game.
 
-Records currently remain in memory; JSON serialization is not implemented.
-`GameRecord.SchemaVersion` identifies the record schema and is independent of
-the package version.
+## JSON game records
+
+Use the static `GameRecord.Serialize` and `GameRecord.Deserialize` methods to
+save and load records:
+
+```csharp
+string json = GameRecord.Serialize(game.ExportRecord());
+GameRecord loaded = GameRecord.Deserialize(json);
+ChessGame restored = ChessGame.FromRecord(loaded);
+```
+
+The version-one format is:
+
+```json
+{
+  "schemaVersion": 1,
+  "initialFen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "moves": ["e2e4", "e7e5"],
+  "drawClaim": null
+}
+```
+
+For a successful draw claim, `drawClaim` is an object such as:
+
+```json
+{
+  "reason": "threefoldRepetition",
+  "intendedMove": "f6g8"
+}
+```
+
+That claim is valid only when the recorded history makes it available. The
+other supported reason is `fiftyMoveRule`. A claim on the current position
+writes `intendedMove: null`; an intended move remains outside `moves` and is
+never played during restoration. Automatic endings write `drawClaim: null`.
+Reasons are written in camel case and read using the standard case-insensitive
+string-enum converter. Numeric reasons, `none` and combinations of claims are
+invalid in a game record.
+
+`schemaVersion`, `initialFen` and `moves` are required and cannot be null.
+`drawClaim` may be null or omitted. Within a claim, `reason` is required and
+`intendedMove` may be null or omitted. Property names are case sensitive;
+property order and whitespace do not matter. Unknown and duplicate properties
+are rejected, including inside a claim. Moves are lowercase coordinate strings,
+including the explicit promotion suffix. Valid JSON escapes are accepted.
+
+`GameRecord.SchemaVersion` is the library's constant for the supported format,
+currently `1`. Serialization writes it into every document; callers do not
+supply it. It is independent of the package version: package `1.1.0` does not
+imply schema version `1.1.0`. A missing or unsupported schema version is rejected;
+no migration of other versions is currently provided.
+
+Deserialization checks the document and validates the entire game through the
+same replay used by `ChessGame.FromRecord`, including draw claims. It returns an
+immutable record only after all checks succeed. Calling `FromRecord` afterwards
+replays it again to create the game to use. Invalid JSON, unsupported versions,
+invalid FEN, unplayable moves and unavailable claims throw `JsonException`.
+Replay errors retain the original `FormatException` as their inner exception;
+move errors include their zero-based index. Null method arguments throw
+`ArgumentNullException`.
+
+The JSON document type and serializer options are internal. Use these static
+methods for the versioned game-record format; direct
+`JsonSerializer.Serialize(record)` is not the persistence API. Standalone
+`Square` and `CoordinateMove` values do support `JsonSerializer` directly through
+their converter attributes and serialize as string tokens such as `"e4"` and
+`"e2e4"`. Invalid default values cannot be serialized. `DrawClaimRecord` uses the
+standard object serializer with the converters for its reason and intended
+move. No JSON-specific types are added to the public API.
 
 ## FEN validation
 

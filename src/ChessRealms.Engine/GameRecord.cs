@@ -1,4 +1,5 @@
 using ChessRealms.Engine.Core.Types;
+using ChessRealms.Engine.Json;
 using ChessRealms.Engine.Parsing;
 
 namespace ChessRealms.Engine;
@@ -17,6 +18,16 @@ public sealed class GameRecord
 
     /// <summary>The successful draw claim, or null if no claim ended the game.</summary>
     public DrawClaimRecord? DrawClaim { get; }
+
+    /// <summary>Serializes a game record to versioned JSON with coordinate moves written as strings.</summary>
+    /// <exception cref="ArgumentNullException">The record is null.</exception>
+    public static string Serialize(GameRecord record) => GameRecordJsonSerializer.Serialize(record);
+
+    /// <summary>Deserializes a game record and validates it by replaying its moves and draw claim.</summary>
+    /// <exception cref="ArgumentNullException">The JSON string is null.</exception>
+    /// <exception cref="System.Text.Json.JsonException">The JSON is invalid, its schema is unsupported,
+    /// or the game cannot be restored.</exception>
+    public static GameRecord Deserialize(string json) => GameRecordJsonSerializer.Deserialize(json);
 
     internal GameRecord(string fen, IReadOnlyList<CoordinateMove> moves, DrawClaimRecord? drawClaim)
     {
