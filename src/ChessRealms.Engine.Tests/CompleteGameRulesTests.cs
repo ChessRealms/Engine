@@ -149,6 +149,7 @@ internal class CompleteGameRulesTests
         Assert.That(game.IsFinished, Is.True);
         Assert.That(game.Outcome.Reason, Is.EqualTo(reason));
         Assert.That(game.Outcome.Winner, Is.EqualTo(winner));
+        Assert.That(game.HasLegalMoves, Is.False);
         Assert.That(game.GetLegalMoves(), Is.Empty);
         string before = State(game);
         Assert.That(game.MakeMove(CoordinateMove.Parse("h8h7")), Is.EqualTo(MoveResult.None));
@@ -412,8 +413,27 @@ internal class CompleteGameRulesTests
         string before = State(game);
         Play(game, "d2e3");
         Assert.That(game.Outcome.Reason, Is.EqualTo(FinishReason.DeadPosition));
+        Assert.That(game.HasLegalMoves, Is.False);
         game.UndoMove();
+        Assert.That(game.HasLegalMoves, Is.True);
         Assert.That(State(game), Is.EqualTo(before));
+    }
+
+    [Test]
+    public void LegalMoveAvailability_TracksDrawClaimsCloningAndUndo()
+    {
+        var game = Game("4k3/8/8/8/8/8/8/R3K3 w - - 99 50");
+        Play(game, "a1a2");
+        Assert.That(game.HasLegalMoves, Is.True);
+        Assert.That(game.ClaimDraw(DrawClaim.FiftyMoveRule), Is.True);
+        var clone = game.Clone();
+
+        Assert.That(game.HasLegalMoves, Is.False);
+        Assert.That(clone.HasLegalMoves, Is.False);
+        Assert.That(game.UndoMove(), Is.True);
+        Assert.That(game.HasLegalMoves, Is.True);
+        Assert.That(game.GetLegalMoves(), Is.Not.Empty);
+        Assert.That(clone.HasLegalMoves, Is.False);
     }
 
     [TestCase(17)]
@@ -438,6 +458,7 @@ internal class CompleteGameRulesTests
                 int previousColor = game.CurrentColor == PieceColor.White ? Colors.White : Colors.Black;
                 Assert.That(copy.Position.IsKingChecked(previousColor), Is.False);
                 Assert.That(FenStrings.TryParse(copy.ToFen(), out var imported), Is.True);
+                Assert.That(imported, Is.EqualTo(copy.Position));
                 Assert.That(FenStrings.Format(imported), Is.EqualTo(copy.ToFen()));
                 Assert.That(copy.UndoMove(), Is.True);
                 Assert.That(copy.Position, Is.EqualTo(positionBefore));
@@ -451,6 +472,7 @@ internal class CompleteGameRulesTests
         for (int i = states.Count - 2; i >= 0; i--)
         {
             Assert.That(game.UndoMove(), Is.True);
+            Assert.That(game.ToFen(), Is.EqualTo(FenStrings.Format(game.Position)));
             Assert.That(State(game), Is.EqualTo(states[i]));
         }
         Assert.That(game.UndoMove(), Is.False);

@@ -66,11 +66,12 @@ public sealed class ChessGame
 
         this.position = position;
         initialFen = FenStrings.Format(position);
-        var legalMoves = GenerateLegalMoves(position);
-        string key = CreateRepetitionKey(position, legalMoves);
+        Span<int> legalMoves = stackalloc int[MoveGen.MaxMoves];
+        int legalMoveCount = WriteLegalMoves(position, legalMoves);
+        string key = CreateRepetitionKey(position, legalMoves[..legalMoveCount]);
         keys.Add(key);
         repetitions.Add(key, 1);
-        Outcome = EvaluateOutcome(position, legalMoves.Count, 1);
+        Outcome = EvaluateOutcome(position, legalMoveCount, 1);
     }
 
     private ChessGame(ChessGame original)
@@ -89,10 +90,26 @@ public sealed class ChessGame
     }
 
     public ChessGame Clone() => new(this);
-    public string ToFen() => FenStrings.FormatUnchecked(position);
+    public string ToFen() => history.Count == 0 ? initialFen : history[^1].FenAfter;
 
     /// <summary>Exports an independent snapshot of the starting position, current move line and draw claim.</summary>
     public GameRecord ExportRecord() => GameRecord.CreateFromGame(this);
+
+    internal CoordinateMove[] CopyRecordedMoves()
+    {
+        if (history.Count == 0)
+        {
+            return [];
+        }
+
+        var moves = new CoordinateMove[history.Count];
+        for (int i = 0; i < history.Count; ++i)
+        {
+            moves[i] = history[i].Move;
+        }
+
+        return moves;
+    }
 
     /// <summary>Restores an independent game by replaying the record's moves and applying its draw claim.</summary>
     /// <exception cref="ArgumentNullException">The record is null.</exception>
@@ -148,10 +165,19 @@ public sealed class ChessGame
             return Array.Empty<CoordinateMove>();
         }
 
-        return Array.AsReadOnly(GenerateLegalMoves(position).Select(ToPublicMove).ToArray());
+        Span<int> legalMoves = stackalloc int[MoveGen.MaxMoves];
+        int legalMoveCount = WriteLegalMoves(position, legalMoves);
+        var moves = new CoordinateMove[legalMoveCount];
+        for (int i = 0; i < legalMoveCount; ++i)
+        {
+            moves[i] = ToPublicMove(legalMoves[i]);
+        }
+
+        return Array.AsReadOnly(moves);
     }
 
-    public bool HasLegalMoves => !IsFinished && GenerateLegalMoves(position).Count != 0;
+    // Outcome evaluation already finishes games with no legal moves.
+    public bool HasLegalMoves => !IsFinished;
 
     public MoveResult MakeMove(CoordinateMove move)
     {
@@ -164,10 +190,11 @@ public sealed class ChessGame
         MoveDriver.MakeMove(ref nextPosition, encodedMove);
         nextPosition.SwitchColor();
 
-        var replies = GenerateLegalMoves(nextPosition);
-        string key = CreateRepetitionKey(nextPosition, replies);
+        Span<int> replies = stackalloc int[MoveGen.MaxMoves];
+        int replyCount = WriteLegalMoves(nextPosition, replies);
+        string key = CreateRepetitionKey(nextPosition, replies[..replyCount]);
         int repetitionCount = repetitions.GetValueOrDefault(key) + 1;
-        var outcome = EvaluateOutcome(nextPosition, replies.Count, repetitionCount);
+        var outcome = EvaluateOutcome(nextPosition, replyCount, repetitionCount);
 
         MoveResult result = MoveResult.Move;
         if (BinaryMoveOps.DecodeCapture(encodedMove) != 0)
@@ -219,7 +246,9 @@ public sealed class ChessGame
         position = undo[^1];
         undo.RemoveAt(undo.Count - 1);
         history.RemoveAt(history.Count - 1);
-        Outcome = EvaluateOutcome(position, GenerateLegalMoves(position).Count, RepetitionCount);
+        Span<int> legalMoves = stackalloc int[MoveGen.MaxMoves];
+        int legalMoveCount = WriteLegalMoves(position, legalMoves);
+        Outcome = EvaluateOutcome(position, legalMoveCount, RepetitionCount);
         DrawIntendedMove = null;
 
         return true;
@@ -237,8 +266,9 @@ public sealed class ChessGame
         MoveDriver.MakeMove(ref nextPosition, encodedMove);
         nextPosition.SwitchColor();
 
-        var legalMoves = GenerateLegalMoves(nextPosition);
-        string key = CreateRepetitionKey(nextPosition, legalMoves);
+        Span<int> legalMoves = stackalloc int[MoveGen.MaxMoves];
+        int legalMoveCount = WriteLegalMoves(nextPosition, legalMoves);
+        string key = CreateRepetitionKey(nextPosition, legalMoves[..legalMoveCount]);
         int repetitionCount = repetitions.GetValueOrDefault(key) + 1;
         return CalculateDrawClaims(nextPosition, repetitionCount);
     }
@@ -277,7 +307,9 @@ public sealed class ChessGame
             return false;
         }
 
-        foreach (int candidate in GenerateLegalMoves(position))
+        Span<int> legalMoves = stackalloc int[MoveGen.MaxMoves];
+        int legalMoveCount = WriteLegalMoves(position, legalMoves);
+        foreach (int candidate in legalMoves[..legalMoveCount])
         {
             if (ToPublicMove(candidate) != move)
             {
@@ -296,36 +328,42 @@ public sealed class ChessGame
         new Square(BinaryMoveOps.DecodeTrg(encodedMove)),
         BinaryMoveOps.DecodePromotion(encodedMove).ToPublicPromotion());
 
-    private static List<int> GenerateLegalMoves(Position position)
+    private static int WriteLegalMoves(Position position, Span<int> moves)
     {
-        Span<int> buffer = stackalloc int[MoveGen.MaxMoves];
-        int written = MoveGen.WriteMoves(ref position, position.color, buffer);
-        List<int> legalMoves = [];
+        int written = MoveGen.WriteMoves(ref position, position.color, moves);
+        int legalMoveCount = 0;
         for (int i = 0; i < written; i++)
         {
             var nextPosition = position;
             // Move legality is independent of FEN counters.
-            MoveDriver.MakeMove(ref nextPosition, buffer[i], updateCounters: false);
+            MoveDriver.MakeMove(ref nextPosition, moves[i], updateCounters: false);
             if (!nextPosition.IsKingChecked(position.color))
             {
-                legalMoves.Add(buffer[i]);
+                moves[legalMoveCount++] = moves[i];
             }
         }
 
-        return legalMoves;
+        return legalMoveCount;
     }
 
-    private static string CreateRepetitionKey(Position position, List<int> legalMoves)
+    private static string CreateRepetitionKey(Position position, ReadOnlySpan<int> legalMoves)
     {
-        if (!legalMoves.Any(move => BinaryMoveOps.DecodeEnpassant(move) != 0))
+        bool hasLegalEnPassant = false;
+        foreach (int move in legalMoves)
+        {
+            if (BinaryMoveOps.DecodeEnpassant(move) != 0)
+            {
+                hasLegalEnPassant = true;
+                break;
+            }
+        }
+
+        if (!hasLegalEnPassant)
         {
             position.enpassant = Squares.Empty;
         }
 
-        string fen = FenStrings.FormatUnchecked(position);
-        int fullmoveSeparator = fen.LastIndexOf(' ');
-        int halfmoveSeparator = fen.LastIndexOf(' ', fullmoveSeparator - 1);
-        return fen[..halfmoveSeparator];
+        return FenStrings.FormatPositionFields(position);
     }
 
     private static DrawClaim CalculateDrawClaims(Position position, int repetitionCount) =>

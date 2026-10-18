@@ -29,6 +29,10 @@ The `Deep` test category contains slower perft cases and is opt-in. See the
 [contribution guide](https://github.com/ChessRealms/Engine/blob/main/CONTRIBUTING.md)
 for contributor checks.
 
+See the
+[performance measurements](https://github.com/ChessRealms/Engine/blob/main/docs/performance.md)
+for game API allocation benchmarks, reproduction commands and ownership guarantees.
+
 ## Public API
 
 ```csharp

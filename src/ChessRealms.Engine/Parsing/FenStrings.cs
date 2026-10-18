@@ -187,6 +187,22 @@ internal static class FenStrings
     internal static string FormatUnchecked(Position position)
     {
         var result = new StringBuilder();
+        AppendPositionFields(result, position);
+        result.Append(' ').Append(position.halfMoveClock.ToString(CultureInfo.InvariantCulture));
+        result.Append(' ').Append(position.fullMoveCount.ToString(CultureInfo.InvariantCulture));
+        return result.ToString();
+    }
+
+    // The first four FEN fields identify a position without its move counters.
+    internal static string FormatPositionFields(Position position)
+    {
+        var result = new StringBuilder();
+        AppendPositionFields(result, position);
+        return result.ToString();
+    }
+
+    private static void AppendPositionFields(StringBuilder result, Position position)
+    {
         for (int rank = 7; rank >= 0; rank--)
         {
             int emptySquares = 0;
@@ -245,8 +261,5 @@ internal static class FenStrings
             ? "-"
             : SquareOps.ToAbbreviature(position.enpassant);
         result.Append(' ').Append(enPassant);
-        result.Append(' ').Append(position.halfMoveClock.ToString(CultureInfo.InvariantCulture));
-        result.Append(' ').Append(position.fullMoveCount.ToString(CultureInfo.InvariantCulture));
-        return result.ToString();
     }
 }

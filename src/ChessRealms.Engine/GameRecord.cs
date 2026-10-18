@@ -39,12 +39,17 @@ public sealed class GameRecord
         DrawClaim = drawClaim;
     }
 
+    private GameRecord(ChessGame game, DrawClaimRecord? drawClaim)
+    {
+        InitialFen = game.InitialFen;
+        Moves = Array.AsReadOnly(game.CopyRecordedMoves());
+        DrawClaim = drawClaim;
+    }
+
     internal static GameRecord CreateFromGame(ChessGame chessGame)
     {
         ArgumentNullException.ThrowIfNull(chessGame);
 
-        var fen = chessGame.InitialFen;
-        var moves = chessGame.History.Select(entry => entry.Move).ToArray();
         DrawClaimRecord? drawClaim = chessGame.Outcome.Reason switch
         {
             FinishReason.ThreefoldRepetition => new(ChessRealms.Engine.DrawClaim.ThreefoldRepetition,
@@ -54,7 +59,7 @@ public sealed class GameRecord
             _ => null
         };
 
-        return new GameRecord(fen, moves, drawClaim);
+        return new GameRecord(chessGame, drawClaim);
     }
 
     internal static ChessGame RestoreGame(GameRecord gameRecord)

@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/docs/" Id="a576d511-a7dd-48da-89d2-a534742656e6">
     <File Path="docs/game-rules-api.md" />
+    <File Path="docs/performance.md" />
     <File Path="docs/releasing.md" />
   </Folder>
   <Folder Name="/scripts/" Id="9f3eeaa3-c0d2-4d93-af81-f93234779361">

@@ -40,6 +40,31 @@ internal class PerftTests
     [TestCaseSource(nameof(FastCases)), Category("Perft")]
     public void Fast(string fen, int depth, ulong expected) => AssertNodes(fen, depth, expected);
 
+    [TestCase(0)]
+    [TestCase(1)]
+    [TestCase(2)]
+    [TestCase(3)]
+    [TestCase(4)]
+    [TestCase(5)]
+    [TestCase(6)]
+    [Category("Perft")]
+    public void PublicGameApi_MatchesKnownMoveCountsThroughDepthTwo(int index)
+    {
+        var game = ChessGame.FromFen(Positions[index].Fen);
+        var moves = game.GetLegalMoves();
+        Assert.That((ulong)moves.Count, Is.EqualTo(Positions[index].Nodes[0]));
+
+        ulong nodes = 0;
+        foreach (var move in moves)
+        {
+            var child = game.Clone();
+            Assert.That(child.MakeMove(move), Is.Not.EqualTo(MoveResult.None));
+            nodes += (ulong)child.GetLegalMoves().Count;
+        }
+
+        Assert.That(nodes, Is.EqualTo(Positions[index].Nodes[1]));
+    }
+
     [TestCaseSource(nameof(DeepCases)), Category("Perft"), Category("Deep")]
     [Explicit("Expensive perft: select with --filter TestCategory=Deep")]
     public void Deep(string fen, int depth, ulong expected) => AssertNodes(fen, depth, expected);
