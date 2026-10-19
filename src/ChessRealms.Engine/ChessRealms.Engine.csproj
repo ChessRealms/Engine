@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/ChessRealms/Engine.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageIcon>chessrealms-emblem-128.png</PackageIcon>
+    <PackageIcon>chessrealms-avatar-128.png</PackageIcon>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <IncludeSymbols>true</IncludeSymbols>
@@ -36,6 +36,6 @@
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="\" />
-    <None Include="..\..\assets\chessrealms-emblem-128.png" Pack="true" PackagePath="\" />
+    <None Include="..\..\assets\chessrealms-avatar-128.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
