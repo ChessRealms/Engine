@@ -127,7 +127,7 @@ Assert-Equal "Package description" (Get-MetadataValue $package.Nuspec "descripti
 Assert-Equal "Package authors" (Get-MetadataValue $package.Nuspec "authors") "ChessRealms"
 Assert-Equal "Package project URL" (Get-MetadataValue $package.Nuspec "projectUrl") "https://github.com/ChessRealms/Engine"
 Assert-Equal "Package README" (Get-MetadataValue $package.Nuspec "readme") "README.md"
-Assert-Equal "Package icon" (Get-MetadataValue $package.Nuspec "icon") "chessrealms-emblem-128.png"
+Assert-Equal "Package icon" (Get-MetadataValue $package.Nuspec "icon") "chessrealms-avatar-128.png"
 
 $license = $package.Nuspec.SelectSingleNode("/*[local-name()='package']/*[local-name()='metadata']/*[local-name()='license']")
 if ($null -eq $license -or $license.GetAttribute("type") -cne "expression" -or $license.InnerText -cne "MIT") {
