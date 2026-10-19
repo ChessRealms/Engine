@@ -146,7 +146,7 @@ $expectedPackageEntries = @(
     "$ExpectedPackageId.nuspec"
     "LICENSE.txt"
     "README.md"
-    "chessrealms-emblem-128.png"
+    "chessrealms-avatar-128.png"
     "lib/net10.0/$ExpectedPackageId.dll"
     "lib/net10.0/$ExpectedPackageId.xml"
     "[Content_Types].xml"
