@@ -27,7 +27,9 @@ internal static class MoveDriver
             position.halfMoveClock = BinaryMoveOps.DecodeSrcPiece(move) == Pieces.Pawn
                 || BinaryMoveOps.DecodeCapture(move) != 0 ? 0 : position.halfMoveClock + 1;
             if (BinaryMoveOps.DecodeSrcColor(move) == Colors.Black)
+            {
                 position.fullMoveCount = position.fullMoveCount + 1;
+            }
         }
         position.enpassant = Squares.Empty;
 

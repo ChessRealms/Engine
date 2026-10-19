@@ -6,13 +6,13 @@ using System.Text;
 namespace ChessRealms.Engine.Debugs;
 
 internal static partial class DebugHelper
-{    
+{
     public const string DEBUG = "DEBUG";
 
     public static string MoveToString(int move)
     {
         var sb = new StringBuilder();
-        
+
         var srcP = BinaryMoveOps.DecodeSrcPiece(move);
         var srcC = BinaryMoveOps.DecodeSrcColor(move);
 
@@ -30,12 +30,17 @@ internal static partial class DebugHelper
             _ => '*'
         };
 
-        if (srcC == Colors.White) piece = char.ToUpper(piece);
+        if (srcC == Colors.White)
+        {
+            piece = char.ToUpper(piece);
+        }
 
         sb.Append(piece);
-        
-        if (cap == 1) 
+
+        if (cap == 1)
+        {
             sb.Append('x');
+        }
 
         sb.Append(SquareOps.ToAbbreviature(trg));
 
