@@ -45,6 +45,16 @@ destination of at least 64 entries, with `ChessPiece.Empty` for vacant squares.
 The raw bitboard position is deliberately not exposed; use FEN, board inspection,
 legal moves, history and `Clone()` for consumer scenarios.
 
+## Standard Algebraic Notation
+
+`FormatSan` and `TryFormatSan` format a playable coordinate move in the current
+position, before it is applied. `ParseSan` and `TryParseSan` resolve canonical
+SAN to a `CoordinateMove` without applying it. `MakeSanMove` resolves and plays
+the text through the same move application used by `MakeMove`, avoiding a second
+search through the current position's legal moves. All SAN operations reject
+finished games. The [SAN guide](san.md) describes exact notation rules, failure
+behavior, examples and performance tradeoffs.
+
 ## Game record export and restoration
 
 `ExportRecord()` creates an independent, immutable `GameRecord` containing the
@@ -196,5 +206,5 @@ fortresses or blocked pawn structures. Lack of a forced mate alone does not
 end a game.
 
 The library supports standard board play, not resignation, draw agreement,
-clocks, tournament claim procedures, SAN/PGN, Chess960, AI/search, UCI,
+clocks, tournament claim procedures, PGN, Chess960, AI/search, UCI,
 networking or a graphical interface.

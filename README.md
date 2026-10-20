@@ -3,11 +3,12 @@
 ChessRealms.Engine is a .NET 10 library for standard chess positions and legal
 play. It uses bitboards and magic attack tables for move generation. The public
 `ChessGame` API supports FEN import/export, legal moves, promotion, history and
-undo, JSON game records, and standard checkmate, stalemate and supported draw
-rules. The repository also includes tests, a console game, a perft runner,
+undo, canonical SAN formatting and parsing, JSON game records, and standard
+checkmate, stalemate and supported draw rules. The repository also includes
+tests, a console game, a perft runner,
 benchmarks and a magic-number search tool.
 
-It does not provide an AI/search engine, UCI, SAN/PGN, Chess960 or tournament
+It does not provide an AI/search engine, UCI, PGN, Chess960 or tournament
 services such as clocks and draw agreements. Dead-position recognition is
 deliberately incomplete; see the
 [game API guide](https://github.com/ChessRealms/Engine/blob/main/docs/game-rules-api.md)
@@ -56,6 +57,21 @@ promotions require a suffix such as `a7a8q`. The
 [game API guide](https://github.com/ChessRealms/Engine/blob/main/docs/game-rules-api.md)
 describes ownership, FEN validation, draw claims, repetition and supported rule
 boundaries.
+
+SAN is available at the text boundary, with the game supplying the position:
+
+```csharp
+var game = new ChessGame();
+CoordinateMove move = game.ParseSan("Nf3"); // Read-only; the move is not played.
+string notation = game.FormatSan(move);   // Format before making the move.
+game.MakeMove(move);
+game.MakeSanMove("d5");                  // Resolve and play text directly.
+```
+
+`TryParseSan(ReadOnlySpan<char>, out CoordinateMove)` and
+`TryFormatSan(CoordinateMove, Span<char>, out int)` support buffer-based use.
+See the [SAN guide](https://github.com/ChessRealms/Engine/blob/main/docs/san.md)
+for canonical spelling, state guarantees, historical moves and performance costs.
 
 Save and restore the current move line, including a successful draw claim:
 
