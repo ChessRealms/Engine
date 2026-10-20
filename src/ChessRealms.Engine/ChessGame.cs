@@ -9,7 +9,7 @@ using System.Numerics;
 namespace ChessRealms.Engine;
 
 /// <summary>A mutable game with exclusive history ownership. Use Clone for independent analysis.</summary>
-public sealed class ChessGame
+public sealed partial class ChessGame
 {
     /// <summary>The FEN for the standard starting position.</summary>
     public const string StartingFen = FenStrings.StartPosition;
@@ -186,6 +186,11 @@ public sealed class ChessGame
             return MoveResult.None;
         }
 
+        return ApplyLegalMove(move, encodedMove);
+    }
+
+    private MoveResult ApplyLegalMove(CoordinateMove move, int encodedMove)
+    {
         var nextPosition = position;
         MoveDriver.MakeMove(ref nextPosition, encodedMove);
         nextPosition.SwitchColor();
@@ -309,7 +314,13 @@ public sealed class ChessGame
 
         Span<int> legalMoves = stackalloc int[MoveGen.MaxMoves];
         int legalMoveCount = WriteLegalMoves(position, legalMoves);
-        foreach (int candidate in legalMoves[..legalMoveCount])
+        return TryFindMove(move, legalMoves[..legalMoveCount], out encodedMove);
+    }
+
+    private static bool TryFindMove(CoordinateMove move, ReadOnlySpan<int> legalMoves, out int encodedMove)
+    {
+        encodedMove = 0;
+        foreach (int candidate in legalMoves)
         {
             if (ToPublicMove(candidate) != move)
             {

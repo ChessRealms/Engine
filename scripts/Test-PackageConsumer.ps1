@@ -104,6 +104,25 @@ if (piece != new ChessPiece(PieceColor.White, PieceValue.Pawn))
 }
 
 game.UndoMove();
+
+if (game.FormatSan(move) != "e4" || game.ParseSan("e4") != move)
+{
+    throw new InvalidOperationException("The package consumer could not format and parse SAN.");
+}
+
+Span<char> san = stackalloc char[7];
+if (!game.TryFormatSan(move, san, out int written) || !san[..written].SequenceEqual("e4")
+    || !game.TryParseSan(san[..written], out var parsed) || parsed != move
+    || game.History.Count != 0)
+{
+    throw new InvalidOperationException("The package consumer could not query SAN through spans.");
+}
+
+if (game.MakeSanMove("e4+") != MoveResult.None || game.MakeSanMove("e4") == MoveResult.None
+    || !game.UndoMove() || game.ToFen() != ChessGame.StartingFen)
+{
+    throw new InvalidOperationException("The package consumer could not apply and undo canonical SAN.");
+}
 '@
     [System.IO.File]::WriteAllText((Join-Path $consumerRoot "Program.cs"), $program)
 

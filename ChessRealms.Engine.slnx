@@ -6,6 +6,7 @@
     <File Path="docs/game-rules-api.md" />
     <File Path="docs/performance.md" />
     <File Path="docs/releasing.md" />
+    <File Path="docs/san.md" />
   </Folder>
   <Folder Name="/scripts/" Id="9f3eeaa3-c0d2-4d93-af81-f93234779361">
     <File Path="scripts/Resolve-ReleaseVersion.ps1" />
