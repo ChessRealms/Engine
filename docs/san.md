@@ -2,8 +2,8 @@
 
 SAN describes a move relative to the position **before** that move. It is useful
 for a human-readable move list, text entry and as a building block for PGN.
-This API handles one canonical SAN move at a time; it does not import or export
-PGN documents.
+The SAN methods handle one canonical move at a time. [PgnGame](pgn.md) builds on
+them to import and export a single game's tags and mainline.
 
 `CoordinateMove` remains the move value used by board input, history and game
 records. A drag from e2 to e4 already supplies a coordinate move and needs no SAN
@@ -74,8 +74,8 @@ accepted; `Ngf3`, `Ng1f3`, `nf3`, `Nf3+` and `Nf3!` are rejected.
 
 There is no whitespace trimming, `0-0` alias, omitted capture marker, implicit
 promotion, `e.p.` suffix, figurine notation, move number, result token, comment
-or annotation support. This is a strict SAN API, not a permissive PGN reader.
-PGN import normalization can be designed separately.
+or annotation support. PGN import handles move numbers and result markers
+separately and retains the same canonical SAN requirement.
 
 ## Failure and state guarantees
 
@@ -126,64 +126,18 @@ A draw claim's intended move was not played and is not in `record.Moves`. A
 game loaded from FEN only has the history played since that FEN. Formatting
 historical moves does not recover earlier moves or encode a game's result.
 
-## Implementation and costs
-
-SAN queries generate legal encoded moves into a bounded stack buffer. The
-parser reads the input span, filters candidates by the supplied move fields,
-then formats only the single selected candidate into a seven-character buffer
-to verify canonical spelling. It does not format every legal move.
-
-Check/mate detection applies the selected move to a value copy of `Position`
-without updating counters. It generates opponent replies only if that copy is
-in check. It does not clone game history, build FEN, update repetition keys or
-use public `GetLegalMoves()` snapshots. Mate detection uses board replies rather
-than the public move availability of a game ended by a draw.
+## Performance and validation
 
 After initialization, successful `TryParseSan`, `ParseSan` and `TryFormatSan`
 queries require no managed heap allocations. `FormatSan` allocates the returned
-string; throwing APIs allocate exceptions on failure. SAN still costs legal-move
-generation and sometimes reply generation, so zero allocation does not imply
-zero CPU cost.
+string; throwing APIs allocate exceptions on failure. SAN still requires legal
+move generation and check/mate detection.
 
-`MakeSanMove` avoids a second current-position search, but its canonical suffix
-verification is additional work. For checking moves, reply generation is done
-both for SAN verification and by normal move application. Applying a move still
-has the existing FEN/history/repetition allocations. Coordinate-based callers
+`MakeSanMove` reuses the resolved internal move for application. Applying it
+still has the normal game history and repetition costs. Coordinate-based callers
 pay no SAN formatting or parsing cost.
 
 `SanTests` covers canonical fixtures, strict rejection, state preservation,
 undo, deterministic playout round trips and allocation checks after warmup.
-`SanBenchmarks` compares span/string formatting, parsing, coordinate application,
-parse-then-apply and direct SAN application. Run it with:
-
-```sh
-dotnet run --project src/ChessRealms.Engine.Benchmark -c Release -- --filter '*SanBenchmarks*' --inProcess --job short --warmupCount 3 --iterationCount 5 --iterationTime 100 --artifacts artifacts/benchmarks/san --exporters JSON
-```
-
-## Local measurements on 2026-10-20
-
-The command above was run against this implementation on Windows 11 x64,
-SDK 10.0.402 and .NET 10.0.13. All 18 benchmarks completed. Span formatting and
-parsing allocated **0 B** in all three scenarios; string formatting allocated
-**32 B** for the selected two-to-five-character outputs. Mean span formatting
-times ranged from 0.616 to 1.252 microseconds; parsing from 0.734 to 1.306
-microseconds.
-
-Application measurements include undo to return to the same starting position.
-Setup and warmup occur outside measurement, including collection growth.
-
-| Scenario | Coordinate + undo | Parse + coordinate + undo | Direct SAN + undo | Allocated by each application path |
-| --- | ---: | ---: | ---: | ---: |
-| Opening (`e4`) | 4.940 us | 5.796 us | 4.885 us | 1048 B |
-| Ambiguous (`Nb1d2`) | 3.588 us | 4.355 us | 3.782 us | 720 B |
-| Mate (`Qg7#`) | 4.397 us | 5.803 us | 4.801 us | 584 B |
-
-These are short in-process measurements, not latency guarantees. Processor
-metadata was unavailable through CIM, the benchmark could not set the power
-plan, and some iterations were below the recommended 100 ms minimum. Small
-differences, including the opening direct-SAN result versus coordinate input,
-are within measurement variability. Use longer isolated-process runs for
-performance decisions. Reports are written under `artifacts/benchmarks/san/`.
-
-Existing FEN history storage, JSON records and package versioning are unchanged
-by the SAN feature.
+`SanBenchmarks` compares formatting, parsing and application paths; see the
+[benchmark guide](performance.md) for commands and measurement guidance.
