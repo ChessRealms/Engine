@@ -5,6 +5,7 @@
   <Folder Name="/docs/" Id="a576d511-a7dd-48da-89d2-a534742656e6">
     <File Path="docs/game-rules-api.md" />
     <File Path="docs/performance.md" />
+    <File Path="docs/pgn.md" />
     <File Path="docs/releasing.md" />
     <File Path="docs/san.md" />
   </Folder>

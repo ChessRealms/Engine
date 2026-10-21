@@ -55,6 +55,19 @@ search through the current position's legal moves. All SAN operations reject
 finished games. The [SAN guide](san.md) describes exact notation rules, failure
 behavior, examples and performance tradeoffs.
 
+## Portable Game Notation
+
+`PgnGame.FromGame(game, tags, result)` snapshots the current line as an immutable
+PGN model. `ToPgn()` and `WriteTo(TextWriter)` export it; `Parse` and `TryParse`
+import one game's tags, initial FEN, canonical SAN mainline and declared result.
+`ToGame()` replays an independent game with history and undo.
+
+The declared `PgnResult` is separate from `ChessGame.Outcome`: a decisive result
+can describe resignation while the position still has legal moves. PGN does not
+retain a draw claim's reason or unplayed intended move. Use `GameRecord` when
+those details must survive restoration. The [PGN guide](pgn.md) covers validation,
+structured errors and unsupported comments, NAGs and variations.
+
 ## Game record export and restoration
 
 `ExportRecord()` creates an independent, immutable `GameRecord` containing the
@@ -206,5 +219,5 @@ fortresses or blocked pawn structures. Lack of a forced mate alone does not
 end a game.
 
 The library supports standard board play, not resignation, draw agreement,
-clocks, tournament claim procedures, PGN, Chess960, AI/search, UCI,
+clocks, tournament claim procedures, annotated PGN, Chess960, AI/search, UCI,
 networking or a graphical interface.

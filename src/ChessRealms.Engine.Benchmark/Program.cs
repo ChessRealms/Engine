@@ -4,6 +4,12 @@ using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Toolchains.InProcess.Emit;
 using ChessRealms.Engine.Benchmark;
 
+if (args is ["--allocation-probe"])
+{
+    AllocationProbe.Run();
+    return;
+}
+
 Console.WriteLine("ChessRealms benchmarks");
 Console.WriteLine();
 

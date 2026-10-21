@@ -56,6 +56,11 @@ internal class PublicApiSurfaceTests
             "ChessRealms.Engine.GameState",
             "ChessRealms.Engine.MoveHistoryEntry",
             "ChessRealms.Engine.MoveResult",
+            "ChessRealms.Engine.PgnDiagnostic",
+            "ChessRealms.Engine.PgnErrorCode",
+            "ChessRealms.Engine.PgnGame",
+            "ChessRealms.Engine.PgnParseException",
+            "ChessRealms.Engine.PgnResult",
             "ChessRealms.Engine.PieceColor",
             "ChessRealms.Engine.PieceValue",
             "ChessRealms.Engine.Square"

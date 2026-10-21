@@ -123,6 +123,36 @@ if (game.MakeSanMove("e4+") != MoveResult.None || game.MakeSanMove("e4") == Move
 {
     throw new InvalidOperationException("The package consumer could not apply and undo canonical SAN.");
 }
+
+game.MakeSanMove("e4");
+var document = PgnGame.FromGame(game,
+    new Dictionary<string, string> { ["Event"] = "Package smoke test" }, PgnResult.WhiteWin);
+using var writer = new StringWriter();
+document.WriteTo(writer);
+if (writer.ToString() != document.ToPgn()
+    || !PgnGame.TryParse(writer.ToString().AsSpan(), out var imported, out var diagnostic)
+    || diagnostic is not null || imported.Result != PgnResult.WhiteWin
+    || imported.Tags["Event"] != "Package smoke test"
+    || imported.Moves.Count != 1 || imported.ToGame().ToFen() != game.ToFen()
+    || imported.ToGame().IsFinished)
+{
+    throw new InvalidOperationException("The package consumer could not round-trip PGN.");
+}
+
+if (PgnGame.TryParse("1. e4 {comment} *", out var invalid, out var error)
+    || invalid is not null || error?.Code != PgnErrorCode.UnsupportedAnnotation || error.Offset != 6)
+{
+    throw new InvalidOperationException("The package consumer could not inspect a PGN diagnostic.");
+}
+
+try
+{
+    PgnGame.Parse("1. e5 *");
+    throw new InvalidOperationException("Invalid PGN did not throw.");
+}
+catch (PgnParseException exception) when (exception.Diagnostic.Code == PgnErrorCode.InvalidSan)
+{
+}
 '@
     [System.IO.File]::WriteAllText((Join-Path $consumerRoot "Program.cs"), $program)
 

@@ -39,6 +39,12 @@ public class GameApiBenchmarks
     public string Fen() => game.ToFen();
 
     [Benchmark]
+    public IReadOnlyList<MoveHistoryEntry> HistorySnapshot() => game.History;
+
+    [Benchmark]
+    public ChessGame Clone() => game.Clone();
+
+    [Benchmark]
     public MoveResult MakeAndUndoMove()
     {
         var result = game.MakeMove(nextMove);
