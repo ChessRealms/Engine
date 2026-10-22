@@ -123,7 +123,7 @@ Assert-Identity $package.Nuspec $resolvedPackagePath
 Assert-Identity $symbols.Nuspec $resolvedSymbolPackagePath
 
 Assert-Equal "Package title" (Get-MetadataValue $package.Nuspec "title") "ChessRealms.Engine"
-Assert-Equal "Package description" (Get-MetadataValue $package.Nuspec "description") "A reusable .NET library for standard chess positions, legal move generation, game state, history, undo, FEN, and standard game-ending rules."
+Assert-Equal "Package description" (Get-MetadataValue $package.Nuspec "description") "C#/.NET library for standard chess rules, legal move generation, FEN, SAN, mainline PGN import/export, history, undo, and JSON game records."
 Assert-Equal "Package authors" (Get-MetadataValue $package.Nuspec "authors") "ChessRealms"
 Assert-Equal "Package project URL" (Get-MetadataValue $package.Nuspec "projectUrl") "https://github.com/ChessRealms/Engine"
 Assert-Equal "Package README" (Get-MetadataValue $package.Nuspec "readme") "README.md"
