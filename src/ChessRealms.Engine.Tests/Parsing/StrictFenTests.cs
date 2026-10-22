@@ -60,7 +60,7 @@ internal class StrictFenTests
     [TestCase("7k/8/8/3pP3/8/8/8/7K w - d6x 0 1")]
     public void InvalidFen_IsRejectedWithoutPartialPosition(string? fen)
     {
-        Assert.That(FenStrings.TryParse(fen, out var position), Is.False);
+        Assert.That(FenParser.TryParse(fen, out var position), Is.False);
         Assert.That(ChessGame.TryCreateFromFen(fen, out var game), Is.False);
         Assert.That(game, Is.Null);
         Assert.Throws<ArgumentException>(() => new ChessGame(position));
@@ -69,7 +69,7 @@ internal class StrictFenTests
     [TestCase("7k/8/8/8/8/8/8/7K w - - 9223372036854775808 1")]
     [TestCase("7k/8/8/8/8/8/8/7K w - - 0 9223372036854775808")]
     [TestCase("7k/8/8/8/8/8/8/7K w - - 999999999999999999999999999999999999 1")]
-    [TestCase(FenStrings.StartPosition)]
+    [TestCase(ChessGame.StartingFen)]
     [TestCase("7k/8/8/3p4/8/8/8/7K w - d6 0 1")]
     [TestCase("7k/8/8/8/3P4/8/8/7K b - d3 0 1")]
     [TestCase("k3r3/8/8/3pP3/8/8/8/4K3 w - d6 0 1")]
@@ -78,23 +78,23 @@ internal class StrictFenTests
     [TestCase("4k3/8/8/8/8/8/8/K3R3 b - - 0 1")]
     public void ValidFen_RoundTripsExactly(string fen)
     {
-        Assert.That(FenStrings.TryParse(fen, out var position), Is.True);
-        Assert.That(FenStrings.Format(position), Is.EqualTo(fen));
+        Assert.That(FenParser.TryParse(fen, out var position), Is.True);
+        Assert.That(FenFormatter.Format(position), Is.EqualTo(fen));
         Assert.That(new ChessGame(position).ToFen(), Is.EqualTo(fen));
     }
 
     [Test]
     public void Fen_LeadingZeroCountersAreCanonicalized()
     {
-        Assert.That(FenStrings.TryParse("7k/8/8/8/8/8/8/7K w - - 000 001", out var p), Is.True);
-        Assert.That(FenStrings.Format(p), Is.EqualTo("7k/8/8/8/8/8/8/7K w - - 0 1"));
+        Assert.That(FenParser.TryParse("7k/8/8/8/8/8/8/7K w - - 000 001", out var p), Is.True);
+        Assert.That(FenFormatter.Format(p), Is.EqualTo("7k/8/8/8/8/8/8/7K w - - 0 1"));
     }
 
     [Test]
     public void InternalPositionEntryPoints_RejectMalformedState()
     {
         Assert.Throws<ArgumentException>(() => new ChessGame(default(Position)));
-        Assert.Throws<ArgumentException>(() => FenStrings.Format(default));
+        Assert.Throws<ArgumentException>(() => FenFormatter.Format(default));
         Assert.Throws<InvalidOperationException>(() => new Position().IsKingChecked());
         Assert.Throws<ArgumentOutOfRangeException>(() => Position.CreateDefault().GetPieceAt(64, Colors.White));
         Assert.Throws<ArgumentOutOfRangeException>(() => Position.CreateDefault().GetPieceAt(0, 3));

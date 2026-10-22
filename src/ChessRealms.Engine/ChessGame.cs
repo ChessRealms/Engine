@@ -13,7 +13,7 @@ namespace ChessRealms.Engine;
 public sealed partial class ChessGame
 {
     /// <summary>The FEN for the standard starting position.</summary>
-    public const string StartingFen = FenStrings.StartPosition;
+    public const string StartingFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     private Position position;
     private readonly string initialFen;
@@ -71,7 +71,7 @@ public sealed partial class ChessGame
         }
 
         this.position = position;
-        initialFen = FenStrings.Format(position);
+        initialFen = FenFormatter.Format(position);
         Span<int> legalMoves = stackalloc int[MoveGen.MaxMoves];
         int legalMoveCount = LegalMoves.Write(position, legalMoves);
         currentRepetitionKey = RepetitionKey.Create(position, legalMoves[..legalMoveCount]);
@@ -101,7 +101,7 @@ public sealed partial class ChessGame
     /// characters written and leaves the destination unchanged. Move counters have arbitrary precision,
     /// so there is no fixed maximum FEN length. Also works after the game finishes.</remarks>
     public bool TryFormatFen(Span<char> destination, out int charsWritten)
-        => FenStrings.TryFormatUnchecked(position, destination, out charsWritten);
+        => FenFormatter.TryFormatWithoutValidation(position, destination, out charsWritten);
 
     /// <summary>Exports an independent snapshot of the starting position, current move line and draw claim.</summary>
     public GameRecord ExportRecord() => GameRecord.CreateFromGame(this);
@@ -399,7 +399,7 @@ public sealed partial class ChessGame
 
     public static bool TryCreateFromFen(string? fen, [NotNullWhen(true)] out ChessGame? chessGame)
     {
-        chessGame = FenStrings.TryParse(fen, out var position) ? new ChessGame(position) : null;
+        chessGame = FenParser.TryParse(fen, out var position) ? new ChessGame(position) : null;
         return chessGame is not null;
     }
 

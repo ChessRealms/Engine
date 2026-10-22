@@ -20,7 +20,7 @@ internal class HistoryFenTests
     {
         var game = ChessGame.FromFen(initialFen);
         var moves = ParseLine(line);
-        var fens = new List<string> { FenStrings.Format(game.Position) };
+        var fens = new List<string> { FenFormatter.Format(game.Position) };
         var results = new List<MoveResult>();
         foreach (var move in moves)
         {
@@ -28,7 +28,7 @@ internal class HistoryFenTests
             Assert.That(result, Is.Not.EqualTo(MoveResult.None));
             results.Add(result);
             // Build expectations without querying the game's lazy FEN or history APIs.
-            fens.Add(FenStrings.Format(game.Position));
+            fens.Add(FenFormatter.Format(game.Position));
         }
 
         var clone = game.Clone();
@@ -71,14 +71,14 @@ internal class HistoryFenTests
         Assert.That(game.ToFen(), Is.SameAs(unchangedPrefix));
         Play(game, "f1c4");
         Assert.That(game.PlyCount, Is.EqualTo(3));
-        Assert.That(game.ToFen(), Is.EqualTo(FenStrings.Format(game.Position)));
+        Assert.That(game.ToFen(), Is.EqualTo(FenFormatter.Format(game.Position)));
         Assert.That(game.GetFenAtPly(3), Is.Not.EqualTo(snapshot[2].FenAfter));
         Assert.Throws<ArgumentOutOfRangeException>(() => game.GetFenAtPly(4));
 
         Assert.That(clone.UndoMove(), Is.True);
         Play(clone, "d7d6");
         Assert.That(clone.PlyCount, Is.EqualTo(4));
-        Assert.That(clone.ToFen(), Is.EqualTo(FenStrings.Format(clone.Position)));
+        Assert.That(clone.ToFen(), Is.EqualTo(FenFormatter.Format(clone.Position)));
         Assert.That(clone.GetFenAtPly(3), Is.EqualTo(snapshot[2].FenAfter));
         Assert.That(clone.GetFenAtPly(4), Is.Not.EqualTo(snapshot[3].FenAfter));
         Assert.That(game.GetFenAtPly(2), Is.SameAs(unchangedPrefix));
@@ -173,11 +173,11 @@ internal class HistoryFenTests
     {
         string fullmove = new('9', 4096);
         var game = ChessGame.FromFen($"4k3/8/8/8/8/8/8/R3K3 b - - 7 {fullmove}");
-        var expected = new List<string> { FenStrings.Format(game.Position) };
+        var expected = new List<string> { FenFormatter.Format(game.Position) };
         foreach (var move in ParseLine("e8e7 a1a2"))
         {
             Assert.That(game.MakeMove(move), Is.Not.EqualTo(MoveResult.None));
-            expected.Add(FenStrings.Format(game.Position));
+            expected.Add(FenFormatter.Format(game.Position));
         }
 
         for (int ply = 0; ply < expected.Count; ply++)

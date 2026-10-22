@@ -11,7 +11,7 @@ internal unsafe class AllMovesTests
     [Test]
     public void Test1_AsBlack()
     {
-        Assert.That(FenStrings.TryParse(fen, out Position position), Is.True);
+        Assert.That(FenParser.TryParse(fen, out Position position), Is.True);
 
         Span<int> moves = stackalloc int[MoveGen.MaxMoves];
         int written = MoveGen.WriteMoves(ref position, position.color, moves);

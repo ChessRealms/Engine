@@ -38,5 +38,5 @@ public class CoreBenchmarks
     public ulong PerftDepth3() => Perft.PerftDriver.Test(position, 3, false).Nodes;
 
     [Benchmark]
-    public string FormatFen() => FenStrings.FormatUnchecked(position);
+    public string FormatFen() => FenFormatter.FormatWithoutValidation(position);
 }

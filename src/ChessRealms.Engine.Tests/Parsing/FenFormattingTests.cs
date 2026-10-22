@@ -32,7 +32,7 @@ internal class FenFormattingTests
     {
         var game = ChessGame.FromFen(fen);
         AssertFormatting(game, fen);
-        Assert.That(FenStrings.FormatPositionFields(game.Position), Is.EqualTo(string.Join(' ', fen.Split(' ').Take(4))));
+        Assert.That(FenFormatter.FormatWithoutCounters(game.Position), Is.EqualTo(string.Join(' ', fen.Split(' ').Take(4))));
     }
 
     [TestCaseSource(nameof(CanonicalFens))]
@@ -86,16 +86,16 @@ internal class FenFormattingTests
     }
 
     [Test]
-    public void UncheckedFormatterSupportsTheMaximumPositionFieldLength()
+    public void FormatterWithoutValidationSupportsTheMaximumLengthWithoutCounters()
     {
         // Internal geometric fixtures may occupy all squares and omit kings.
         string fields = $"{string.Join('/', Enumerable.Repeat("pppppppp", 8))} w KQkq h6";
         string fen = fields + " 0 1";
-        Assert.That(FenStrings.TryParseSyntax(fen, out var position), Is.True);
-        Assert.That(FenStrings.FormatUnchecked(position), Is.EqualTo(fen));
-        Assert.That(FenStrings.FormatPositionFields(position), Is.EqualTo(fields));
+        Assert.That(FenParser.TryParseSyntaxOnly(fen, out var position), Is.True);
+        Assert.That(FenFormatter.FormatWithoutValidation(position), Is.EqualTo(fen));
+        Assert.That(FenFormatter.FormatWithoutCounters(position), Is.EqualTo(fields));
         Span<char> buffer = stackalloc char[fen.Length];
-        Assert.That(FenStrings.TryFormatUnchecked(position, buffer, out int written), Is.True);
+        Assert.That(FenFormatter.TryFormatWithoutValidation(position, buffer, out int written), Is.True);
         Assert.That(new string(buffer[..written]), Is.EqualTo(fen));
     }
 
@@ -132,7 +132,7 @@ internal class FenFormattingTests
 
     private static void AssertFormatting(ChessGame game, string expected)
     {
-        Assert.That(FenStrings.Format(game.Position), Is.EqualTo(expected));
+        Assert.That(FenFormatter.Format(game.Position), Is.EqualTo(expected));
         Assert.That(game.ToFen(), Is.EqualTo(expected));
         char[] buffer = Enumerable.Repeat('?', expected.Length + 6).ToArray();
         foreach (int capacity in new[] { expected.Length, expected.Length + 2 })

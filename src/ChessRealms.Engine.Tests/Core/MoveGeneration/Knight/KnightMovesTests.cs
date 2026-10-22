@@ -28,7 +28,7 @@ internal unsafe class KnightMovesTests
     public KnightMovesTests()
     {
         // Deliberately synthetic geometry fixture: no kings and pawns on back ranks.
-        Assert.That(FenStrings.TryParseSyntax(fen, out position), Is.True);
+        Assert.That(FenParser.TryParseSyntaxOnly(fen, out position), Is.True);
     }
 
     [Test]

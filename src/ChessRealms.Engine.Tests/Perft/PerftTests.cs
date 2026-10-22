@@ -10,7 +10,7 @@ internal class PerftTests
     // Kiwipete's omitted clocks are normalized to 0 1; clocks do not affect perft.
     private static readonly (string Name, string Fen, ulong[] Nodes)[] Positions =
     [
-        ("Initial", FenStrings.StartPosition, [20, 400, 8902, 197281, 4865609, 119060324]),
+        ("Initial", ChessGame.StartingFen, [20, 400, 8902, 197281, 4865609, 119060324]),
         ("Kiwipete", "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", [48, 2039, 97862, 4085603, 193690690]),
         ("Position3_EnPassant", "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", [14, 191, 2812, 43238, 674624, 11030083]),
         ("Position4_Promotions", "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", [6, 264, 9467, 422333, 15833292]),
@@ -71,7 +71,7 @@ internal class PerftTests
 
     private static void AssertNodes(string fen, int depth, ulong expected)
     {
-        Assert.That(FenStrings.TryParse(fen, out var position), Is.True, fen);
+        Assert.That(FenParser.TryParse(fen, out var position), Is.True, fen);
         Assert.That(PerftDriver.Test(position, depth, upper: false).Nodes, Is.EqualTo(expected),
             $"FEN: {fen}; depth: {depth}");
     }
@@ -84,7 +84,7 @@ internal class PerftTests
     [Category("Perft")]
     public void SpecialMoveCounts(int index, int depth, int captures, int ep, int castles, int promotions)
     {
-        Assert.That(FenStrings.TryParse(Positions[index].Fen, out var position), Is.True);
+        Assert.That(FenParser.TryParse(Positions[index].Fen, out var position), Is.True);
         var result = PerftDriver.Test(position, depth, upper: false);
         Assert.Multiple(() =>
         {

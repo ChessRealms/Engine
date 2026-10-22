@@ -67,7 +67,7 @@ public sealed class GameRecord
     {
         ArgumentNullException.ThrowIfNull(gameRecord);
 
-        if (!FenStrings.TryParse(gameRecord.InitialFen, out Position position))
+        if (!FenParser.TryParse(gameRecord.InitialFen, out Position position))
         {
             throw new FormatException("The game record contains an invalid initial FEN.");
         }

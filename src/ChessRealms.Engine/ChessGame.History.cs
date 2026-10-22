@@ -33,7 +33,7 @@ public sealed partial class ChessGame
     {
         charsWritten = 0;
         return (uint)ply <= (uint)history.Count
-            && FenStrings.TryFormatUnchecked(GetPositionAtPly(ply), destination, out charsWritten);
+            && FenFormatter.TryFormatWithoutValidation(GetPositionAtPly(ply), destination, out charsWritten);
     }
 
     // The caller has checked the range. undo[i] is the position before move i.
@@ -47,7 +47,7 @@ public sealed partial class ChessGame
             return fen;
         }
 
-        fen = FenStrings.FormatUnchecked(GetPositionAtPly(moveIndex + 1));
+        fen = FenFormatter.FormatWithoutValidation(GetPositionAtPly(moveIndex + 1));
         history[moveIndex] = entry with { CachedFen = fen };
         return fen;
     }

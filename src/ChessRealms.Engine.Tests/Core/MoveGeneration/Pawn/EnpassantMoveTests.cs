@@ -29,7 +29,7 @@ internal unsafe class EnpassantMoveTests
 
         string fen = "rnbqkbnr/1pppp1p1/8/pP6/5pPp/4P3/P1PP1P1P/RNBQKBNR w KQkq a6 0 1";
 
-        if (!FenStrings.TryParse(fen, out Position position))
+        if (!FenParser.TryParse(fen, out Position position))
         {
             Assert.Fail();
             return;
@@ -74,7 +74,7 @@ internal unsafe class EnpassantMoveTests
 
         string fen = "rnbqkbnr/1pppp1p1/8/pP6/5pPp/4P3/P1PP1P1P/RNBQKBNR b KQkq g3 0 1";
 
-        if (!FenStrings.TryParse(fen, out Position position))
+        if (!FenParser.TryParse(fen, out Position position))
         {
             Assert.Fail();
             return;

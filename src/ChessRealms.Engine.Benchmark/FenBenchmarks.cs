@@ -28,7 +28,7 @@ public class FenBenchmarks
         game = ChessGame.FromFen(fen);
         position = game.Position;
         destination = new char[fen.Length];
-        if (FenStrings.FormatUnchecked(position) != fen)
+        if (FenFormatter.FormatWithoutValidation(position) != fen)
         {
             throw new InvalidOperationException("Invalid FEN benchmark fixture.");
         }
@@ -40,12 +40,12 @@ public class FenBenchmarks
     }
 
     [Benchmark]
-    public string FormatString() => FenStrings.FormatUnchecked(position);
+    public string FormatString() => FenFormatter.FormatWithoutValidation(position);
 
     [Benchmark]
     public int FormatSpan() => game.TryFormatFen(destination, out int written)
         ? written : throw new InvalidOperationException("The FEN buffer must fit the fixture.");
 
     [Benchmark]
-    public string FormatPositionFields() => FenStrings.FormatPositionFields(position);
+    public string FormatPositionFields() => FenFormatter.FormatWithoutCounters(position);
 }

@@ -23,7 +23,7 @@ internal static class PgnWriter
         }
 
         writer.Write('\n');
-        if (!FenStrings.TryParse(document.InitialFen, out var position))
+        if (!FenParser.TryParse(document.InitialFen, out var position))
         {
             throw new InvalidOperationException("The validated PGN starting position could not be loaded.");
         }

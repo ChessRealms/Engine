@@ -24,7 +24,7 @@ internal unsafe class QuietMoveTests
         // 2 P P P P P P P P
         // 1 R N B Q K B N R
 
-        if (!FenStrings.TryParse(FenStrings.StartPosition, out Position position))
+        if (!FenParser.TryParse(ChessGame.StartingFen, out Position position))
         {
             Assert.Fail(ParseFenError);
             return;

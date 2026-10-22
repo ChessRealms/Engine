@@ -68,7 +68,7 @@ internal class RepetitionKeyTests
     [TestCase("4k3/8/8/8/3Pp3/8/8/K3R3 b - d3 0 1", false)]
     public void Identity_RetainsOnlyLegallyAvailableEnPassant(string fen, bool distinct)
     {
-        Assert.That(FenStrings.TryParse(fen, out var position), Is.True);
+        Assert.That(FenParser.TryParse(fen, out var position), Is.True);
         Span<int> moves = stackalloc int[MoveGen.MaxMoves];
         int count = LegalMoves.Write(position, moves);
         var withTarget = RepetitionKey.Create(position, moves[..count]);
@@ -81,8 +81,8 @@ internal class RepetitionKeyTests
     [Test]
     public void Identity_DistinguishesDifferentLegalEnPassantTargetsOnTheSameBoard()
     {
-        Assert.That(FenStrings.TryParse("7k/8/8/1pPpP3/8/8/8/7K w - b6 0 1", out var left), Is.True);
-        Assert.That(FenStrings.TryParse("7k/8/8/1pPpP3/8/8/8/7K w - d6 0 1", out var right), Is.True);
+        Assert.That(FenParser.TryParse("7k/8/8/1pPpP3/8/8/8/7K w - b6 0 1", out var left), Is.True);
+        Assert.That(FenParser.TryParse("7k/8/8/1pPpP3/8/8/8/7K w - d6 0 1", out var right), Is.True);
         Span<int> moves = stackalloc int[MoveGen.MaxMoves];
         int count = LegalMoves.Write(left, moves);
         var leftKey = RepetitionKey.Create(left, moves[..count]);

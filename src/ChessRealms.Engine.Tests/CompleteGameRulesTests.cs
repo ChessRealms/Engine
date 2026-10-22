@@ -73,12 +73,12 @@ internal class CompleteGameRulesTests
     public void InitialPosition_ClocksRightsAndPositionCopy()
     {
         ChessGame game = new();
-        Assert.That(game.ToFen(), Is.EqualTo(FenStrings.StartPosition));
-        Assert.That(FenStrings.Format(Position.CreateDefault()), Is.EqualTo(FenStrings.StartPosition));
+        Assert.That(game.ToFen(), Is.EqualTo(ChessGame.StartingFen));
+        Assert.That(FenFormatter.Format(Position.CreateDefault()), Is.EqualTo(ChessGame.StartingFen));
         Assert.That(game.GetLegalMoves(), Has.Count.EqualTo(20));
         var snapshot = game.Position;
         snapshot.PopPieceAt(Squares.a1, Pieces.Rook, Colors.White);
-        Assert.That(game.ToFen(), Is.EqualTo(FenStrings.StartPosition));
+        Assert.That(game.ToFen(), Is.EqualTo(ChessGame.StartingFen));
     }
 
     [Test]
@@ -457,9 +457,9 @@ internal class CompleteGameRulesTests
                 AssertInvariants(copy.Position);
                 int previousColor = game.CurrentColor == PieceColor.White ? Colors.White : Colors.Black;
                 Assert.That(copy.Position.IsKingChecked(previousColor), Is.False);
-                Assert.That(FenStrings.TryParse(copy.ToFen(), out var imported), Is.True);
+                Assert.That(FenParser.TryParse(copy.ToFen(), out var imported), Is.True);
                 Assert.That(imported, Is.EqualTo(copy.Position));
-                Assert.That(FenStrings.Format(imported), Is.EqualTo(copy.ToFen()));
+                Assert.That(FenFormatter.Format(imported), Is.EqualTo(copy.ToFen()));
                 Assert.That(copy.UndoMove(), Is.True);
                 Assert.That(copy.Position, Is.EqualTo(positionBefore));
                 Assert.That(State(copy), Is.EqualTo(before));
@@ -472,7 +472,7 @@ internal class CompleteGameRulesTests
         for (int i = states.Count - 2; i >= 0; i--)
         {
             Assert.That(game.UndoMove(), Is.True);
-            Assert.That(game.ToFen(), Is.EqualTo(FenStrings.Format(game.Position)));
+            Assert.That(game.ToFen(), Is.EqualTo(FenFormatter.Format(game.Position)));
             Assert.That(State(game), Is.EqualTo(states[i]));
         }
         Assert.That(game.UndoMove(), Is.False);
