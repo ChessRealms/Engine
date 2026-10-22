@@ -95,6 +95,9 @@ behavior, examples and performance tradeoffs.
 PGN model. `ToPgn()` and `WriteTo(TextWriter)` export it; `Parse` and `TryParse`
 import one game's tags, initial FEN, canonical SAN mainline and declared result.
 `ToGame()` replays an independent game with history and undo.
+`PgnGame.Parse(text, out ChessGame game)` returns the document and the game built
+during validation in one replay; the corresponding `TryParse` overload returns
+both objects or neither. Later game changes do not affect the document.
 
 The declared `PgnResult` is separate from `ChessGame.Outcome`: a decisive result
 can describe resignation while the position still has legal moves. PGN does not

@@ -18,7 +18,7 @@ Use a single filter to focus on one suite:
 | `HistoryBenchmarks` | Replay with no FEN reads, per-move FEN/history reads, a final history read, warmed snapshots, cloning, historical FEN and move + undo at 0, 20 and 120 plies. |
 | `RecordJsonBenchmarks` | Deserialize + restore versus direct JSON restoration, both alone and followed by a move and JSON export, at 0, 20 and 120 plies. |
 | `SanBenchmarks` | Span/string formatting, parsing and move + undo for opening, ambiguous and mating moves. |
-| `PgnBenchmarks` | Snapshot, export, import and restoration at 0, 20 and 120 plies. |
+| `PgnBenchmarks` | Snapshot, export, import and restoration at 0, 20 and 120 plies, including Parse + ToGame versus import with the validated game. |
 
 Setup and input preparation are outside measurements. PGN scenarios use prefixes
 of the same validated line. Move + undo returns to the same position, with
@@ -26,6 +26,12 @@ collections already warmed; restoration creates a new game including replay
 and collection growth. Export to `TextWriter.Null` excludes output storage,
 encoding and I/O. Running without arguments starts the existing depth-six perft
 benchmark, which can take longer.
+
+`ImportAndRestore` and `ImportWithGame` both parse the same input and create the
+PGN document and game. The former replays again through `ToGame()`; the latter
+returns the game built during validation. Both benchmark methods return the
+game and discard the document after parsing. Setup checks matching document
+output and game records outside measurements.
 
 History scenarios use prefixes of the same validated PGN line. Replay creates
 a fresh game per operation. Snapshot and individual historical FEN queries use

@@ -79,8 +79,7 @@ Exchange a single game's tags and mainline in PGN:
 ```csharp
 PgnGame document = PgnGame.FromGame(game, result: PgnResult.WhiteWin);
 string pgn = document.ToPgn();
-PgnGame imported = PgnGame.Parse(pgn);
-ChessGame replay = imported.ToGame();
+PgnGame imported = PgnGame.Parse(pgn, out ChessGame replay);
 ```
 
 `PgnGame` is an immutable snapshot. Its declared result can represent resignation

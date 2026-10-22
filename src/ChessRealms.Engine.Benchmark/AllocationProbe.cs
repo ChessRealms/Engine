@@ -98,6 +98,7 @@ internal static class AllocationProbe
             Measure("PGN", scenario, "ImportSpan", benchmark.ImportSpan);
             Measure("PGN", scenario, "Restore", benchmark.Restore);
             Measure("PGN", scenario, "ImportAndRestore", benchmark.ImportAndRestore);
+            Measure("PGN", scenario, "ImportWithGame", benchmark.ImportWithGame);
         }
     }
 

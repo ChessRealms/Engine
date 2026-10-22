@@ -68,6 +68,7 @@ internal class PgnImportTests
         var exception = Assert.Throws<PgnParseException>(() => PgnGame.Parse(text));
         Assert.That(exception!.Diagnostic, Is.EqualTo(error));
         Assert.That(exception, Is.InstanceOf<FormatException>());
+        AssertDirectFailure(text, error!);
     }
 
     [TestCase("[Event \"a\"][Event \"b\"] *", PgnErrorCode.DuplicateTag)]
@@ -92,6 +93,7 @@ internal class PgnImportTests
         Assert.That(error!.Code, Is.EqualTo(code));
         Assert.That(error.PlyIndex, Is.Null);
         Assert.That(error.Offset, Is.InRange(0, text.Length));
+        AssertDirectFailure(text, error);
     }
 
     [TestCase("\r\n")]
@@ -105,6 +107,7 @@ internal class PgnImportTests
         Assert.That(error.Line, Is.EqualTo(4));
         Assert.That(error.Column, Is.EqualTo(2));
         Assert.That(error.PlyIndex, Is.EqualTo(1));
+        AssertDirectFailure(text, error);
     }
 
     [Test]
@@ -114,6 +117,7 @@ internal class PgnImportTests
         Assert.That(error!.Code, Is.EqualTo(PgnErrorCode.ResultMismatch));
         Assert.That(error.Offset, Is.EqualTo(21));
         Assert.That(error.PlyIndex, Is.EqualTo(1));
+        AssertDirectFailure("[Result \"1-0\"] 1. e4 0-1", error);
         Assert.That(PgnGame.Parse("[Result \"1-0\"] 1. e4 1-0").Result, Is.EqualTo(PgnResult.WhiteWin));
     }
 
@@ -139,10 +143,12 @@ internal class PgnImportTests
         {
             Assert.That(PgnGame.TryParse(text, out _, out var error), Is.False);
             Assert.That(error!.Code, Is.EqualTo(PgnErrorCode.InvalidTag));
+            AssertDirectFailure(text, error);
         }
 
         Assert.That(PgnGame.TryParse(new string('a', 256) + " *", out _, out var tokenError), Is.False);
         Assert.That(tokenError!.Code, Is.EqualTo(PgnErrorCode.UnexpectedToken));
+        AssertDirectFailure(new string('a', 256) + " *", tokenError);
     }
 
     [Test]
@@ -157,6 +163,23 @@ internal class PgnImportTests
             bool success = PgnGame.TryParse(text, out var document, out var error);
             Assert.That(document is not null, Is.EqualTo(success), text);
             Assert.That(error is null, Is.EqualTo(success), text);
+            bool directSuccess = PgnGame.TryParse(text, out var directDocument, out var game, out var directError);
+            Assert.That(directSuccess, Is.EqualTo(success), text);
+            Assert.That(directDocument is not null, Is.EqualTo(success), text);
+            Assert.That(game is not null, Is.EqualTo(success), text);
+            Assert.That(directError, Is.EqualTo(error), text);
         }
+    }
+
+    private static void AssertDirectFailure(string text, PgnDiagnostic expected)
+    {
+        ChessGame? game = new();
+        PgnGame? document = PgnGame.FromGame(game);
+        Assert.That(PgnGame.TryParse(text, out document, out game, out var diagnostic), Is.False);
+        Assert.That(document, Is.Null);
+        Assert.That(game, Is.Null);
+        Assert.That(diagnostic, Is.EqualTo(expected));
+        var exception = Assert.Throws<PgnParseException>(() => PgnGame.Parse(text, out _));
+        Assert.That(exception!.Diagnostic, Is.EqualTo(expected));
     }
 }

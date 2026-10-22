@@ -113,8 +113,32 @@ public sealed class PgnGame
     public static PgnGame Parse(ReadOnlySpan<char> text)
         => TryParse(text, out var game, out var diagnostic) ? game : throw new PgnParseException(diagnostic);
 
+    /// <summary>Imports a PGN document and returns the game built during validation, replaying the mainline once.</summary>
+    /// <remarks>The game includes history, counters, repetition and undo. The returned document is an immutable
+    /// snapshot and is unaffected by later game changes. Its declared result does not apply a new engine ending;
+    /// an ongoing game can accompany a decisive PGN result, as with <see cref="ToGame"/>.</remarks>
+    /// <exception cref="PgnParseException">The PGN is invalid or uses unsupported annotations or variants.</exception>
+    public static PgnGame Parse(ReadOnlySpan<char> text, out ChessGame game)
+    {
+        if (!TryParse(text, out var document, out var parsedGame, out var diagnostic))
+        {
+            throw new PgnParseException(diagnostic);
+        }
+
+        game = parsedGame;
+        return document;
+    }
+
     /// <summary>Imports atomically. On failure returns no game and a diagnostic; on success the diagnostic is null.</summary>
     public static bool TryParse(ReadOnlySpan<char> text, [NotNullWhen(true)] out PgnGame? game,
         [NotNullWhen(false)] out PgnDiagnostic? diagnostic)
-        => PgnReader.TryRead(text, out game, out diagnostic);
+        => PgnReader.TryRead(text, out game, out _, out diagnostic);
+
+    /// <summary>Imports a document and its game in one mainline replay. On failure both outputs are null;
+    /// on success both are non-null and the diagnostic is null.</summary>
+    /// <remarks>The game is exposed only after the entire input is validated. Later game changes do not
+    /// affect the document. The declared PGN result remains separate from the engine outcome.</remarks>
+    public static bool TryParse(ReadOnlySpan<char> text, [NotNullWhen(true)] out PgnGame? document,
+        [NotNullWhen(true)] out ChessGame? game, [NotNullWhen(false)] out PgnDiagnostic? diagnostic)
+        => PgnReader.TryRead(text, out document, out game, out diagnostic);
 }

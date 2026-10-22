@@ -180,6 +180,27 @@ if (writer.ToString() != document.ToPgn()
     throw new InvalidOperationException("The package consumer could not round-trip PGN.");
 }
 
+var directPgn = PgnGame.Parse(writer.ToString().AsSpan(), out ChessGame pgnReplay);
+if (directPgn.ToPgn() != imported.ToPgn() || pgnReplay.ToFen() != game.ToFen()
+    || pgnReplay.IsFinished || directPgn.Result != PgnResult.WhiteWin
+    || !PgnGame.TryParse(writer.ToString().AsSpan(), out var tryPgn, out var tryPgnReplay, out var tryPgnError)
+    || tryPgnError is not null || tryPgn.ToPgn() != directPgn.ToPgn()
+    || tryPgnReplay.ToFen() != pgnReplay.ToFen())
+{
+    throw new InvalidOperationException("The package consumer could not import PGN with its validated game.");
+}
+
+if (!pgnReplay.UndoMove() || directPgn.Moves.Count != 1 || tryPgnReplay.PlyCount != 1)
+{
+    throw new InvalidOperationException("The direct PGN document and games are not independent.");
+}
+
+if (PgnGame.TryParse("1. e4 * trailing", out var failedPgn, out var failedPgnGame, out var directError)
+    || failedPgn is not null || failedPgnGame is not null || directError?.Code != PgnErrorCode.UnexpectedToken)
+{
+    throw new InvalidOperationException("The direct PGN import exposed partial outputs.");
+}
+
 if (PgnGame.TryParse("1. e4 {comment} *", out var invalid, out var error)
     || invalid is not null || error?.Code != PgnErrorCode.UnsupportedAnnotation || error.Offset != 6)
 {
@@ -190,6 +211,15 @@ try
 {
     PgnGame.Parse("1. e5 *");
     throw new InvalidOperationException("Invalid PGN did not throw.");
+}
+catch (PgnParseException exception) when (exception.Diagnostic.Code == PgnErrorCode.InvalidSan)
+{
+}
+
+try
+{
+    PgnGame.Parse("1. e5 *", out _);
+    throw new InvalidOperationException("Invalid direct PGN import did not throw.");
 }
 catch (PgnParseException exception) when (exception.Diagnostic.Code == PgnErrorCode.InvalidSan)
 {
