@@ -6,11 +6,11 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>ChessRealms.Engine</PackageId>
-    <VersionPrefix>1.1.0</VersionPrefix>
+    <VersionPrefix>1.2.0</VersionPrefix>
     <Title>ChessRealms.Engine</Title>
-    <Description>A reusable .NET library for standard chess positions, legal move generation, game state, history, undo, FEN, and standard game-ending rules.</Description>
+    <Description>C#/.NET library for standard chess rules, legal move generation, FEN, SAN, mainline PGN import/export, history, undo, and JSON game records.</Description>
     <Authors>ChessRealms</Authors>
-    <PackageTags>chess;chess-engine;bitboard;move-generation;fen</PackageTags>
+    <PackageTags>chess;chess-engine;chess-library;chess-rules;bitboard;move-generation;fen;san;pgn</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/ChessRealms/Engine</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ChessRealms/Engine.git</RepositoryUrl>
