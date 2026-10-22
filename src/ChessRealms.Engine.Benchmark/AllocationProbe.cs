@@ -34,6 +34,43 @@ internal static class AllocationProbe
             Measure("GameApi", scenario, "Deserialize", benchmark.Deserialize);
         }
 
+        foreach (int plies in new[] { 0, 20, 120 })
+        {
+            var benchmark = new RecordJsonBenchmarks { MoveCount = plies };
+            benchmark.Setup();
+            string scenario = plies.ToString(CultureInfo.InvariantCulture);
+            Measure("RecordJson", scenario, "DeserializeThenRestore", benchmark.DeserializeThenRestore);
+            Measure("RecordJson", scenario, "RestoreDirectly", benchmark.RestoreDirectly);
+            Measure("RecordJson", scenario, "DeserializeThenMoveAndSave", benchmark.DeserializeThenMoveAndSave);
+            Measure("RecordJson", scenario, "RestoreThenMoveAndSave", benchmark.RestoreThenMoveAndSave);
+        }
+
+        foreach (string scenario in new[] { "Start", "Kiwipete", "EnPassant", "LargeCounters" })
+        {
+            var benchmark = new FenBenchmarks { Scenario = scenario };
+            benchmark.Setup();
+            Measure("FEN", scenario, "FormatString", benchmark.FormatString);
+            Measure("FEN", scenario, "FormatSpan", benchmark.FormatSpan);
+            Measure("FEN", scenario, "FormatPositionFields", benchmark.FormatPositionFields);
+        }
+
+        foreach (int plies in new[] { 0, 20, 120 })
+        {
+            var benchmark = new HistoryBenchmarks { MoveCount = plies };
+            benchmark.Setup();
+            string scenario = plies.ToString(CultureInfo.InvariantCulture);
+            Measure("History", scenario, "ReplayWithoutFen", benchmark.ReplayWithoutFen);
+            Measure("History", scenario, "ReplayWithFen", benchmark.ReplayWithFen);
+            Measure("History", scenario, "ReplayThenHistory", benchmark.ReplayThenHistory);
+            Measure("History", scenario, "ReplayWithHistoryEachMove", benchmark.ReplayWithHistoryEachMove);
+            Measure("History", scenario, "HistorySnapshot", benchmark.HistorySnapshot);
+            Measure("History", scenario, "Clone", benchmark.Clone);
+            Measure("History", scenario, "MakeAndUndo", benchmark.MakeAndUndo);
+            Measure("History", scenario, "MakeReadFenAndUndo", benchmark.MakeReadFenAndUndo);
+            Measure("History", scenario, "HistoricalFenString", benchmark.HistoricalFenString);
+            Measure("History", scenario, "HistoricalFenSpan", benchmark.HistoricalFenSpan);
+        }
+
         foreach (string scenario in new[] { "Opening", "Ambiguous", "Mate" })
         {
             var benchmark = new SanBenchmarks { Scenario = scenario };
@@ -61,6 +98,7 @@ internal static class AllocationProbe
             Measure("PGN", scenario, "ImportSpan", benchmark.ImportSpan);
             Measure("PGN", scenario, "Restore", benchmark.Restore);
             Measure("PGN", scenario, "ImportAndRestore", benchmark.ImportAndRestore);
+            Measure("PGN", scenario, "ImportWithGame", benchmark.ImportWithGame);
         }
     }
 

@@ -12,7 +12,7 @@ Console.WriteLine();
 
 AttackLookups.InvokeInit();
 
-_ = FenStrings.TryParse(fen, out Position pos);
+_ = FenParser.TryParse(fen, out Position pos);
 
 Stopwatch stopwatch = Stopwatch.StartNew();
 

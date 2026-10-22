@@ -10,6 +10,12 @@ if (args is ["--allocation-probe"])
     return;
 }
 
+if (args is ["--history-memory-probe"])
+{
+    HistoryMemoryProbe.Run();
+    return;
+}
+
 Console.WriteLine("ChessRealms benchmarks");
 Console.WriteLine();
 

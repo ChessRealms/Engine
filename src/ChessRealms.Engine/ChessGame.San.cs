@@ -1,21 +1,18 @@
 using ChessRealms.Engine.Core.Constants;
 using ChessRealms.Engine.Core.Math;
 using ChessRealms.Engine.Core.Movements;
-using ChessRealms.Engine.Core.Types;
+using ChessRealms.Engine.Parsing;
 
 namespace ChessRealms.Engine;
 
 public sealed partial class ChessGame
 {
-    // Canonical SAN is at most seven ASCII characters, for example Qa6xb7#.
-    private const int MaxSanLength = 7;
-
     /// <summary>Formats a playable move as canonical Standard Algebraic Notation in the current position.</summary>
     /// <remarks>Call before applying the move. Does not change the game.</remarks>
     /// <exception cref="ArgumentException">The move is invalid, illegal, or the game is finished.</exception>
     public string FormatSan(CoordinateMove move)
     {
-        Span<char> text = stackalloc char[MaxSanLength];
+        Span<char> text = stackalloc char[SanFormatter.MaxLength];
         return TryFormatSan(move, text, out int written)
             ? new string(text[..written])
             : throw new ArgumentException("The move must be playable in the current game.", nameof(move));
@@ -34,14 +31,14 @@ public sealed partial class ChessGame
         }
 
         Span<int> legalMoves = stackalloc int[MoveGen.MaxMoves];
-        int count = WriteLegalMoves(position, legalMoves);
-        if (!TryFindMove(move, legalMoves[..count], out int encodedMove))
+        int count = LegalMoves.Write(position, legalMoves);
+        if (!LegalMoves.TryFind(move, legalMoves[..count], out int encodedMove))
         {
             return false;
         }
 
-        Span<char> text = stackalloc char[MaxSanLength];
-        int length = WriteSan(position, encodedMove, legalMoves[..count], text);
+        Span<char> text = stackalloc char[SanFormatter.MaxLength];
+        int length = SanFormatter.Write(position, encodedMove, legalMoves[..count], text);
         if (destination.Length < length)
         {
             return false;
@@ -70,7 +67,7 @@ public sealed partial class ChessGame
             return false;
         }
 
-        move = ToPublicMove(encodedMove);
+        move = LegalMoves.ToCoordinateMove(encodedMove);
         return true;
     }
 
@@ -79,7 +76,7 @@ public sealed partial class ChessGame
     /// Returns MoveResult.None without changing the game for invalid input or a finished game.</remarks>
     public MoveResult MakeSanMove(ReadOnlySpan<char> text)
         => TryFindSanMove(text, out int encodedMove)
-            ? ApplyLegalMove(ToPublicMove(encodedMove), encodedMove)
+            ? ApplyLegalMove(LegalMoves.ToCoordinateMove(encodedMove), encodedMove)
             : MoveResult.None;
 
     private bool TryFindSanMove(ReadOnlySpan<char> text, out int encodedMove)
@@ -91,7 +88,7 @@ public sealed partial class ChessGame
         }
 
         Span<int> legalMoves = stackalloc int[MoveGen.MaxMoves];
-        int count = WriteLegalMoves(position, legalMoves);
+        int count = LegalMoves.Write(position, legalMoves);
         int selected = 0;
         foreach (int candidate in legalMoves[..count])
         {
@@ -116,8 +113,8 @@ public sealed partial class ChessGame
 
         // Only the selected move needs check/mate evaluation. This also rejects
         // unnecessary source qualifiers and all noncanonical spellings.
-        Span<char> canonical = stackalloc char[MaxSanLength];
-        int length = WriteSan(position, selected, legalMoves[..count], canonical);
+        Span<char> canonical = stackalloc char[SanFormatter.MaxLength];
+        int length = SanFormatter.Write(position, selected, legalMoves[..count], canonical);
         if (!text.SequenceEqual(canonical[..length]))
         {
             return false;
@@ -127,93 +124,10 @@ public sealed partial class ChessGame
         return true;
     }
 
-    private static int WriteSan(Position before, int move, ReadOnlySpan<int> legalMoves, Span<char> text)
-    {
-        int length = 0;
-        int castling = BinaryMoveOps.DecodeCastling(move);
-        if (castling != Castlings.None)
-        {
-            ReadOnlySpan<char> castle = (castling & (Castlings.WK | Castlings.BK)) != 0 ? "O-O" : "O-O-O";
-            castle.CopyTo(text);
-            length = castle.Length;
-        }
-        else
-        {
-            int piece = BinaryMoveOps.DecodeSrcPiece(move);
-            int source = BinaryMoveOps.DecodeSrc(move);
-            int target = BinaryMoveOps.DecodeTrg(move);
-            bool capture = BinaryMoveOps.DecodeCapture(move) != 0;
-            if (piece != Pieces.Pawn)
-            {
-                text[length++] = "PNBRQK"[piece];
-                bool alternative = false;
-                bool sameFile = false;
-                bool sameRank = false;
-                foreach (int candidate in legalMoves)
-                {
-                    int otherSource = BinaryMoveOps.DecodeSrc(candidate);
-                    if (otherSource == source || BinaryMoveOps.DecodeSrcPiece(candidate) != piece
-                        || BinaryMoveOps.DecodeTrg(candidate) != target)
-                    {
-                        continue;
-                    }
-
-                    alternative = true;
-                    sameFile |= otherSource % 8 == source % 8;
-                    sameRank |= otherSource / 8 == source / 8;
-                }
-
-                if (alternative)
-                {
-                    if (!sameFile || sameRank)
-                    {
-                        text[length++] = (char)('a' + source % 8);
-                    }
-
-                    if (sameFile)
-                    {
-                        text[length++] = (char)('1' + source / 8);
-                    }
-                }
-            }
-            else if (capture)
-            {
-                text[length++] = (char)('a' + source % 8);
-            }
-
-            if (capture)
-            {
-                text[length++] = 'x';
-            }
-
-            text[length++] = (char)('a' + target % 8);
-            text[length++] = (char)('1' + target / 8);
-            int promotion = BinaryMoveOps.DecodePromotion(move);
-            if (promotion != Promotions.None)
-            {
-                text[length++] = '=';
-                text[length++] = "PNBRQK"[promotion];
-            }
-        }
-
-        // SAN needs board geometry, not counters or repetition history. In
-        // particular an automatic draw with check must not be mistaken for mate.
-        var after = before;
-        MoveDriver.MakeMove(ref after, move, updateCounters: false);
-        after.SwitchColor();
-        if (after.IsKingChecked(after.color))
-        {
-            Span<int> replies = stackalloc int[MoveGen.MaxMoves];
-            text[length++] = WriteLegalMoves(after, replies) == 0 ? '#' : '+';
-        }
-
-        return length;
-    }
-
     private static bool TryReadSanPattern(ReadOnlySpan<char> text, out SanPattern pattern)
     {
         pattern = default;
-        if (text.Length is < 2 or > MaxSanLength)
+        if (text.Length is < 2 or > SanFormatter.MaxLength)
         {
             return false;
         }

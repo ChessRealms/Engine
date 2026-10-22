@@ -85,9 +85,10 @@ from the mainline under the engine's [rule boundaries](game-rules-api.md).
 
 ```csharp
 ReadOnlySpan<char> input = "1. e4 e5 2. Nf3 *";
-if (PgnGame.TryParse(input, out PgnGame? document, out PgnDiagnostic? error))
+if (PgnGame.TryParse(input, out PgnGame? document, out ChessGame? game, out PgnDiagnostic? error))
 {
-    ChessGame replay = document.ToGame();
+    // Both outputs are non-null here. The game was built during PGN validation.
+    Console.WriteLine($"Declared result: {document.Result}; board: {game.ToFen()}");
 }
 else
 {
@@ -95,9 +96,24 @@ else
 }
 ```
 
+For the throwing form, use `PgnGame.Parse(input, out ChessGame game)`, which
+returns the `PgnGame` document. Both overloads replay the mainline once and
+return that validated game with history, counters, repetition and undo. The
+document owns an immutable snapshot: changing or undoing the returned game
+does not change its moves, tags or declared result. As with `ToGame()`, the
+declared result does not create a new engine ending.
+
+Use `PgnGame.Parse(input)` or the three-argument `TryParse` when only the
+document is needed. Calling `ToGame()` on it later creates an independent
+game through another replay. The overloads returning both objects avoid that
+second replay when importing for immediate game use.
+
 `Parse` throws `PgnParseException`, a `FormatException` exposing the same
-`Diagnostic`. `TryParse` returns false with a null document on any format,
-legality or unsupported-feature error; it never exposes a partly imported game.
+`Diagnostic`. All overloads use the same validation and diagnostics.
+`TryParse` returns false with a null document and, for the overload returning a
+game, a null game on any format, legality or unsupported-feature error. This
+includes errors after legal moves or after the termination marker; neither
+output exposes a partially imported game.
 Success returns a null diagnostic. Neither operation takes or mutates an
 existing game.
 
@@ -133,10 +149,17 @@ and redundant setup tags are normalized on export.
 ## Costs and validation
 
 PGN import consumes SAN from character spans, but processing a document still
-allocates model and replay data. `WriteTo` avoids creating the complete output
-string. `ToGame()` performs a replay each time, so keep the returned game when
-you need to continue using it. Coordinate-based move application pays no PGN
-processing cost.
+allocates model and replay data. Use the `Parse`/`TryParse` overload returning
+the game when both are needed; keep that instance for subsequent operations.
+`ToGame()` performs another replay each time. `WriteTo` avoids creating the
+complete output string. Coordinate-based move application pays no PGN processing
+cost.
+
+Export advances one position through the validated mainline, sharing legal-move
+generation and SAN formatting with `ChessGame`. It does not build another game
+history, undo stack or repetition dictionary. Move numbers use span formatting
+with a string fallback for unusually large counters. Parsing the initial FEN,
+ordering tags and storing output can still allocate.
 
 Tests cover model ownership, result conflicts, custom FEN/counters, escaping,
 canonical output, structured diagnostics, unsupported features, special moves,

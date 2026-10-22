@@ -31,9 +31,16 @@ public class PgnBenchmarks
         {
             throw new InvalidOperationException("The benchmark fixture must round-trip.");
         }
+
+        var directDocument = PgnGame.Parse(text, out var directGame);
+        if (directDocument.ToPgn() != imported.ToPgn()
+            || GameRecord.Serialize(directGame.ExportRecord()) != GameRecord.Serialize(game.ExportRecord()))
+        {
+            throw new InvalidOperationException("Both import paths must preserve the document and game.");
+        }
     }
 
-    private static CoordinateMove[] CreateLongLine()
+    internal static CoordinateMove[] CreateLongLine()
     {
         // Use the same 120-ply fixture prefix for every size. Reject short games
         // during setup instead of accidentally measuring fewer plies than advertised.
@@ -76,4 +83,11 @@ public class PgnBenchmarks
 
     [Benchmark]
     public ChessGame ImportAndRestore() => PgnGame.Parse(text.AsSpan()).ToGame();
+
+    [Benchmark]
+    public ChessGame ImportWithGame()
+    {
+        _ = PgnGame.Parse(text.AsSpan(), out var replay);
+        return replay;
+    }
 }

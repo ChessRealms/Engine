@@ -28,7 +28,7 @@ internal unsafe class PromoteMoveTests
 
     public PromoteMoveTests()
     {
-        _ = FenStrings.TryParse(fen, out position);
+        _ = FenParser.TryParse(fen, out position);
     }
 
     [Test]

@@ -79,8 +79,7 @@ Exchange a single game's tags and mainline in PGN:
 ```csharp
 PgnGame document = PgnGame.FromGame(game, result: PgnResult.WhiteWin);
 string pgn = document.ToPgn();
-PgnGame imported = PgnGame.Parse(pgn);
-ChessGame replay = imported.ToGame();
+PgnGame imported = PgnGame.Parse(pgn, out ChessGame replay);
 ```
 
 `PgnGame` is an immutable snapshot. Its declared result can represent resignation
@@ -93,13 +92,13 @@ Save and restore the current move line, including a successful draw claim:
 
 ```csharp
 string json = GameRecord.Serialize(game.ExportRecord());
-GameRecord record = GameRecord.Deserialize(json);
-ChessGame restored = ChessGame.FromRecord(record);
+ChessGame restored = ChessGame.FromRecordJson(json);
 ```
 
 JSON records include a schema version, initial FEN, coordinate moves and an
-optional draw claim. Import validates the game by replaying its moves. The
+optional draw claim. `FromRecordJson` validates and restores the game in one replay. The
 restored game preserves history, repetition counts and undo support.
+Use `GameRecord.Deserialize` when an immutable record is needed instead of a game.
 
 The package intentionally exposes only the high-level types in the
 `ChessRealms.Engine` namespace. Bitboards, encoded moves, magic tables, raw

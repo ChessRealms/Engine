@@ -1,19 +1,16 @@
 using ChessRealms.Engine.Core.Constants;
-using ChessRealms.Engine.Core.Math;
 using ChessRealms.Engine.Core.Types;
 using System.Globalization;
 using System.Numerics;
-using System.Text;
 
 namespace ChessRealms.Engine.Parsing;
 
-internal static class FenStrings
+internal static class FenParser
 {
-    internal const string StartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
+    // Parses all six fields, then checks the standard-chess position invariants.
     internal static bool TryParse(string? fen, out Position position)
     {
-        if (TryParseSyntax(fen, out var candidate) && PositionValidation.IsValid(candidate))
+        if (TryParseSyntaxOnly(fen, out var candidate) && PositionValidation.IsValid(candidate))
         {
             position = candidate;
             return true;
@@ -25,7 +22,7 @@ internal static class FenStrings
 
     // Internal geometric move-generation fixtures may deliberately omit kings.
     // This entry point must never be used to construct a public game.
-    internal static bool TryParseSyntax(string? fen, out Position position)
+    internal static bool TryParseSyntaxOnly(string? fen, out Position position)
     {
         position = new();
         if (fen is null)
@@ -61,8 +58,8 @@ internal static class FenStrings
             return false;
         }
 
-        if (!TryParseCounter(fields[4], out candidate.halfMoveClock)
-            || !TryParseCounter(fields[5], out candidate.fullMoveCount)
+        if (!TryParseNonNegativeCounter(fields[4], out candidate.halfMoveClock)
+            || !TryParseNonNegativeCounter(fields[5], out candidate.fullMoveCount)
             || candidate.fullMoveCount == 0)
         {
             return false;
@@ -167,99 +164,10 @@ internal static class FenStrings
         return true;
     }
 
-    private static bool TryParseCounter(string text, out BigInteger value)
+    private static bool TryParseNonNegativeCounter(string text, out BigInteger value)
     {
         value = 0;
         return text.All(c => c is >= '0' and <= '9')
             && BigInteger.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out value);
-    }
-
-    internal static string Format(Position position)
-    {
-        if (!PositionValidation.IsValid(position))
-        {
-            throw new ArgumentException("Invalid standard chess position.", nameof(position));
-        }
-
-        return FormatUnchecked(position);
-    }
-
-    internal static string FormatUnchecked(Position position)
-    {
-        var result = new StringBuilder();
-        AppendPositionFields(result, position);
-        result.Append(' ').Append(position.halfMoveClock.ToString(CultureInfo.InvariantCulture));
-        result.Append(' ').Append(position.fullMoveCount.ToString(CultureInfo.InvariantCulture));
-        return result.ToString();
-    }
-
-    // The first four FEN fields identify a position without its move counters.
-    internal static string FormatPositionFields(Position position)
-    {
-        var result = new StringBuilder();
-        AppendPositionFields(result, position);
-        return result.ToString();
-    }
-
-    private static void AppendPositionFields(StringBuilder result, Position position)
-    {
-        for (int rank = 7; rank >= 0; rank--)
-        {
-            int emptySquares = 0;
-            for (int file = 0; file < 8; file++)
-            {
-                var piece = position.GetPieceAt(rank * 8 + file, Colors.White);
-                if (!Piece.IsValid(piece))
-                {
-                    piece = position.GetPieceAt(rank * 8 + file, Colors.Black);
-                }
-
-                if (!Piece.IsValid(piece))
-                {
-                    emptySquares++;
-                    continue;
-                }
-
-                if (emptySquares != 0)
-                {
-                    result.Append(emptySquares);
-                    emptySquares = 0;
-                }
-
-                char symbol = "pnbrqk"[piece.Value];
-                result.Append(piece.Color == Colors.White ? char.ToUpperInvariant(symbol) : symbol);
-            }
-
-            if (emptySquares != 0)
-            {
-                result.Append(emptySquares);
-            }
-
-            if (rank != 0)
-            {
-                result.Append('/');
-            }
-        }
-
-        result.Append(position.color == Colors.White ? " w " : " b ");
-        if (position.castlings == Castlings.None)
-        {
-            result.Append('-');
-        }
-        else
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                if ((position.castlings & (1 << i)) != 0)
-                {
-                    result.Append("KQkq"[i]);
-                }
-            }
-        }
-
-        string enPassant = position.enpassant == Squares.Empty
-            ? "-"
-            : SquareOps.ToAbbreviature(position.enpassant);
-        result.Append(' ').Append(enPassant);
     }
 }

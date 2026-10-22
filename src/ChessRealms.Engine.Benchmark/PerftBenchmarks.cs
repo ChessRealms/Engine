@@ -12,7 +12,7 @@ public class PerftBenchmarks
 
     public PerftBenchmarks()
     {
-        _ = FenStrings.TryParse(FenStrings.StartPosition, out position);
+        _ = FenParser.TryParse(ChessGame.StartingFen, out position);
         AttackLookups.InvokeInit();
     }
 

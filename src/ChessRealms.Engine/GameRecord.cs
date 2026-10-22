@@ -24,6 +24,7 @@ public sealed class GameRecord
     public static string Serialize(GameRecord record) => GameRecordJsonSerializer.Serialize(record);
 
     /// <summary>Deserializes a game record and validates it by replaying its moves and draw claim.</summary>
+    /// <remarks>Use <see cref="ChessGame.FromRecordJson"/> when a playable game is needed directly.</remarks>
     /// <exception cref="ArgumentNullException">The JSON string is null.</exception>
     /// <exception cref="System.Text.Json.JsonException">The JSON is invalid, its schema is unsupported,
     /// or the game cannot be restored.</exception>
@@ -66,7 +67,7 @@ public sealed class GameRecord
     {
         ArgumentNullException.ThrowIfNull(gameRecord);
 
-        if (!FenStrings.TryParse(gameRecord.InitialFen, out Position position))
+        if (!FenParser.TryParse(gameRecord.InitialFen, out Position position))
         {
             throw new FormatException("The game record contains an invalid initial FEN.");
         }

@@ -1,5 +1,3 @@
-using ChessRealms.Engine.Parsing;
-
 namespace ChessRealms.Engine.Tests;
 
 internal class ChessGameTests
@@ -84,9 +82,9 @@ internal class ChessGameTests
         Assert.That(game!.CurrentColor, Is.EqualTo(PieceColor.Black));
     }
 
-    [TestCase(FenStrings.StartPosition, "e2e5")]
-    [TestCase(FenStrings.StartPosition, "e7e5")]
-    [TestCase(FenStrings.StartPosition, "a3a4")]
+    [TestCase(ChessGame.StartingFen, "e2e5")]
+    [TestCase(ChessGame.StartingFen, "e7e5")]
+    [TestCase(ChessGame.StartingFen, "a3a4")]
     [TestCase("k3r3/8/8/8/8/8/4R3/4K3 w - - 0 1", "e2f2")]
     public void IllegalMove_PreservesBoardTurnAndFinishedState(string fen, string move)
     {

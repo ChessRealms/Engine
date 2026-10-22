@@ -13,17 +13,18 @@ internal ref struct PgnReader(ReadOnlySpan<char> text)
     private PgnDiagnostic? _error;
 
     internal static bool TryRead(ReadOnlySpan<char> text, [NotNullWhen(true)] out PgnGame? document,
-        [NotNullWhen(false)] out PgnDiagnostic? diagnostic)
+        [NotNullWhen(true)] out ChessGame? game, [NotNullWhen(false)] out PgnDiagnostic? diagnostic)
     {
         var reader = new PgnReader(text);
-        bool success = reader.Read(out document);
+        bool success = reader.Read(out document, out game);
         diagnostic = reader._error;
         return success;
     }
 
-    private bool Read([NotNullWhen(true)] out PgnGame? document)
+    private bool Read([NotNullWhen(true)] out PgnGame? document, [NotNullWhen(true)] out ChessGame? game)
     {
         document = null;
+        game = null;
         if (!_text.IsEmpty && _text[0] == '\uFEFF')
         {
             ++_position;
@@ -51,7 +52,7 @@ internal ref struct PgnReader(ReadOnlySpan<char> text)
             return Fail(PgnErrorCode.InvalidSetup, offset, null, "FEN requires SetUp \"1\", and SetUp \"1\" requires FEN.");
         }
 
-        if (!ChessGame.TryCreateFromFen(fen ?? ChessGame.StartingFen, out var game))
+        if (!ChessGame.TryCreateFromFen(fen ?? ChessGame.StartingFen, out var replay))
         {
             return Fail(PgnErrorCode.InvalidFen, _tagOffsets["FEN"], null, "The starting FEN is invalid.");
         }
@@ -114,7 +115,7 @@ internal ref struct PgnReader(ReadOnlySpan<char> text)
                 }
 
                 if ((headerResult.HasValue && result != headerResult.Value)
-                    || (game.IsFinished && result != PgnTags.FromOutcome(game.Outcome.Result)))
+                    || (replay.IsFinished && result != PgnTags.FromOutcome(replay.Outcome.Result)))
                 {
                     return Fail(PgnErrorCode.ResultMismatch, start, ply, "The result conflicts with the Result tag or finished position.");
                 }
@@ -131,14 +132,17 @@ internal ref struct PgnReader(ReadOnlySpan<char> text)
                         _position, ply, "Only one game is accepted; unexpected content follows its result.");
                 }
 
-                document = PgnGame.FromGame(game, _tags, result);
+                document = PgnGame.FromGame(replay, _tags, result);
+                // Publish the validated replay only after checking the result
+                // and trailing input; failures never expose a partial game.
+                game = replay;
                 return true;
             }
 
             if (IsDigits(token))
             {
                 if (pendingNumber.HasValue || !BigInteger.TryParse(token, NumberStyles.None, CultureInfo.InvariantCulture, out var number)
-                    || number != game.FullmoveNumber)
+                    || number != replay.FullmoveNumber)
                 {
                     return Fail(PgnErrorCode.InvalidMoveNumber, start, ply, "The move number does not match the position.");
                 }
@@ -160,12 +164,12 @@ internal ref struct PgnReader(ReadOnlySpan<char> text)
                 return Fail(PgnErrorCode.UnsupportedAnnotation, _position, ply, "Move annotations are not supported.");
             }
 
-            if (game.IsFinished)
+            if (replay.IsFinished)
             {
                 return Fail(PgnErrorCode.MoveAfterGameEnd, start, ply, "No move is legal after the game has finished.");
             }
 
-            if (game.MakeSanMove(token) == MoveResult.None)
+            if (replay.MakeSanMove(token) == MoveResult.None)
             {
                 return Fail(PgnErrorCode.InvalidSan, start, ply, "Expected a legal move in canonical SAN for this position.");
             }
