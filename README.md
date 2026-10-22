@@ -1,5 +1,7 @@
 # ChessRealms.Engine
 
+[![NuGet](https://img.shields.io/nuget/v/ChessRealms.Engine.svg)](https://www.nuget.org/packages/ChessRealms.Engine)
+
 ChessRealms.Engine is a .NET 10 library for standard chess positions and legal
 play. It uses bitboards and magic attack tables for move generation. The public
 `ChessGame` API supports FEN import/export, legal moves, promotion, history and
