@@ -1,15 +1,18 @@
 using ChessRealms.Engine.Core.Constants;
-using ChessRealms.Engine.Core.Math;
 using ChessRealms.Engine.Core.Types;
+using System.Buffers;
 using System.Globalization;
 using System.Numerics;
-using System.Text;
 
 namespace ChessRealms.Engine.Parsing;
 
 internal static class FenStrings
 {
     internal const string StartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+    // 64 piece symbols, seven rank separators, side, castling and en passant fields.
+    private const int MaxPositionFieldsLength = 81;
+    private const int StackBufferLength = 128;
 
     internal static bool TryParse(string? fen, out Position position)
     {
@@ -186,23 +189,94 @@ internal static class FenStrings
 
     internal static string FormatUnchecked(Position position)
     {
-        var result = new StringBuilder();
-        AppendPositionFields(result, position);
-        result.Append(' ').Append(position.halfMoveClock.ToString(CultureInfo.InvariantCulture));
-        result.Append(' ').Append(position.fullMoveCount.ToString(CultureInfo.InvariantCulture));
-        return result.ToString();
+        int capacity = GetBufferLength(position);
+        char[]? rented = null;
+        Span<char> text = capacity <= StackBufferLength
+            ? stackalloc char[StackBufferLength]
+            : (rented = ArrayPool<char>.Shared.Rent(capacity));
+        try
+        {
+            int written = WriteUnchecked(position, text);
+            return new string(text[..written]);
+        }
+        finally
+        {
+            if (rented is not null)
+            {
+                ArrayPool<char>.Shared.Return(rented);
+            }
+        }
+    }
+
+    internal static bool TryFormatUnchecked(Position position, Span<char> destination, out int charsWritten)
+    {
+        charsWritten = 0;
+        int capacity = GetBufferLength(position);
+        char[]? rented = null;
+        Span<char> text = capacity <= StackBufferLength
+            ? stackalloc char[StackBufferLength]
+            : (rented = ArrayPool<char>.Shared.Rent(capacity));
+        try
+        {
+            int written = WriteUnchecked(position, text);
+            if (!text[..written].TryCopyTo(destination))
+            {
+                return false;
+            }
+
+            charsWritten = written;
+            return true;
+        }
+        finally
+        {
+            if (rented is not null)
+            {
+                ArrayPool<char>.Shared.Return(rented);
+            }
+        }
+    }
+
+    private static int GetBufferLength(Position position)
+        => checked(MaxPositionFieldsLength + 2
+            + GetCounterBufferLength(position.halfMoveClock)
+            + GetCounterBufferLength(position.fullMoveCount));
+
+    // Since 10 > 2^3, bitLength / 3 + 1 safely bounds the decimal digits.
+    // This integer bound also works at powers of ten without floating-point rounding.
+    private static int GetCounterBufferLength(BigInteger value)
+        => checked((int)(value.GetBitLength() / 3 + 1) + (value.Sign < 0 ? 1 : 0));
+
+    private static int WriteUnchecked(Position position, Span<char> destination)
+    {
+        int length = WritePositionFields(position, destination);
+        destination[length++] = ' ';
+        length += WriteCounter(position.halfMoveClock, destination[length..]);
+        destination[length++] = ' ';
+        length += WriteCounter(position.fullMoveCount, destination[length..]);
+        return length;
+    }
+
+    private static int WriteCounter(BigInteger value, Span<char> destination)
+    {
+        if (!value.TryFormat(destination, out int written, provider: CultureInfo.InvariantCulture))
+        {
+            throw new InvalidOperationException("The internal FEN buffer is too small.");
+        }
+
+        return written;
     }
 
     // The first four FEN fields identify a position without its move counters.
     internal static string FormatPositionFields(Position position)
     {
-        var result = new StringBuilder();
-        AppendPositionFields(result, position);
-        return result.ToString();
+        Span<char> text = stackalloc char[MaxPositionFieldsLength];
+        int written = WritePositionFields(position, text);
+        return new string(text[..written]);
     }
 
-    private static void AppendPositionFields(StringBuilder result, Position position)
+    private static int WritePositionFields(Position position, Span<char> destination)
     {
+        int length = 0;
         for (int rank = 7; rank >= 0; rank--)
         {
             int emptySquares = 0;
@@ -222,29 +296,31 @@ internal static class FenStrings
 
                 if (emptySquares != 0)
                 {
-                    result.Append(emptySquares);
+                    destination[length++] = (char)('0' + emptySquares);
                     emptySquares = 0;
                 }
 
                 char symbol = "pnbrqk"[piece.Value];
-                result.Append(piece.Color == Colors.White ? char.ToUpperInvariant(symbol) : symbol);
+                destination[length++] = piece.Color == Colors.White ? char.ToUpperInvariant(symbol) : symbol;
             }
 
             if (emptySquares != 0)
             {
-                result.Append(emptySquares);
+                destination[length++] = (char)('0' + emptySquares);
             }
 
             if (rank != 0)
             {
-                result.Append('/');
+                destination[length++] = '/';
             }
         }
 
-        result.Append(position.color == Colors.White ? " w " : " b ");
+        destination[length++] = ' ';
+        destination[length++] = position.color == Colors.White ? 'w' : 'b';
+        destination[length++] = ' ';
         if (position.castlings == Castlings.None)
         {
-            result.Append('-');
+            destination[length++] = '-';
         }
         else
         {
@@ -252,14 +328,22 @@ internal static class FenStrings
             {
                 if ((position.castlings & (1 << i)) != 0)
                 {
-                    result.Append("KQkq"[i]);
+                    destination[length++] = "KQkq"[i];
                 }
             }
         }
 
-        string enPassant = position.enpassant == Squares.Empty
-            ? "-"
-            : SquareOps.ToAbbreviature(position.enpassant);
-        result.Append(' ').Append(enPassant);
+        destination[length++] = ' ';
+        if (position.enpassant == Squares.Empty)
+        {
+            destination[length++] = '-';
+        }
+        else
+        {
+            destination[length++] = (char)('a' + position.enpassant % 8);
+            destination[length++] = (char)('1' + position.enpassant / 8);
+        }
+
+        return length;
     }
 }

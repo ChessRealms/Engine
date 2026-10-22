@@ -28,7 +28,8 @@ pseudolegal moves are filtered for king safety.
   move, to identify the winner.
 - `GetPiece(Square)` reads one square. `CopyBoardTo(Span<ChessPiece>)` copies all
   64 squares in a1-to-h8 order. `History` is a read-only snapshot of successful
-  moves with the move, FEN before/after and move flags. `UndoMove()` restores
+  moves with the move, FEN before/after and move flags. `PlyCount` reads the number
+  of recorded half-moves without constructing a history snapshot. `UndoMove()` restores
   the previous position, repetition count and outcome, including after a
   terminal move or a draw claim made after that move. It returns false if there
   is no move to undo. A claim itself is not a move and cannot be undone when
@@ -44,6 +45,39 @@ reason. Loaded positions are classified immediately. `CopyBoardTo` requires a
 destination of at least 64 entries, with `ChessPiece.Empty` for vacant squares.
 The raw bitboard position is deliberately not exposed; use FEN, board inspection,
 legal moves, history and `Clone()` for consumer scenarios.
+
+## FEN output
+
+`ToFen()` returns the current position as a canonical FEN string. After a move,
+the string is formatted on first request and cached for that position.
+`TryFormatFen(Span<char> destination, out int charsWritten)` writes the same text
+into a caller-owned buffer without creating a FEN string. Both work after the
+game finishes and leave its position, history and outcome unchanged.
+
+If the buffer is too small, `TryFormatFen` returns false, sets `charsWritten` to
+zero and leaves the entire destination unchanged. On success, only the written
+prefix is modified. FEN uses invariant ASCII notation. Move counters have
+arbitrary precision, so callers must accommodate their size rather than assume
+a fixed maximum FEN length.
+
+`GetFenAtPly(int ply)` returns FEN for one position in the current recorded line.
+Zero selects the initial position, even when the game started from a custom FEN;
+`PlyCount` selects the current position. A ply counts one recorded half-move,
+independently of the fullmove number in FEN. For history entry `i`, ply `i` is
+the position before the move and ply `i + 1` is the position after it.
+
+`TryFormatFenAtPly(int ply, Span<char> destination, out int charsWritten)` writes
+that position directly to a caller-owned buffer without creating or caching a
+FEN string. An out-of-range ply makes `GetFenAtPly` throw
+`ArgumentOutOfRangeException`; the span method returns false with zero written
+and leaves the destination unchanged. The same span failure contract applies
+when the buffer is too small.
+
+Individual string queries format and cache only the selected position. Reading
+`History` materializes all before/after strings, reusing any already cached
+strings. Its public entries retain their value semantics and remain unchanged
+after later moves, undo or a different continuation. Historical queries on the
+game follow its current line; undone positions are no longer addressable there.
 
 ## Standard Algebraic Notation
 
@@ -107,14 +141,20 @@ whole record succeeds; it does not change the record or the original game.
 
 ## JSON game records
 
-Use the static `GameRecord.Serialize` and `GameRecord.Deserialize` methods to
-save and load records:
+Use `GameRecord.Serialize` to save a record and `ChessGame.FromRecordJson` to
+restore a playable game directly:
 
 ```csharp
 string json = GameRecord.Serialize(game.ExportRecord());
-GameRecord loaded = GameRecord.Deserialize(json);
-ChessGame restored = ChessGame.FromRecord(loaded);
+ChessGame restored = ChessGame.FromRecordJson(json);
 ```
+
+`FromRecordJson(string json)` validates and restores the entire game in one
+replay, returning an independent instance with history, repetition counts,
+outcome, draw claims and undo support. It accepts the same versioned record
+format as `GameRecord.Deserialize`. Use `GameRecord.Deserialize(json)` when an
+immutable record is needed; `ChessGame.FromRecord(record)` remains available
+for records already in memory.
 
 The version-one format is:
 
@@ -157,10 +197,12 @@ supply it. It is independent of the package version: package `1.1.0` does not
 imply schema version `1.1.0`. A missing or unsupported schema version is rejected;
 no migration of other versions is currently provided.
 
-Deserialization checks the document and validates the entire game through the
-same replay used by `ChessGame.FromRecord`, including draw claims. It returns an
-immutable record only after all checks succeed. Calling `FromRecord` afterwards
-replays it again to create the game to use. Invalid JSON, unsupported versions,
+Both JSON entry points check the document and validate the entire game through
+the same replay used by `ChessGame.FromRecord`, including draw claims. They
+return a result only after all checks succeed. `GameRecord.Deserialize` returns
+an immutable record; calling `FromRecord` afterwards replays it again.
+`ChessGame.FromRecordJson` returns the game built during validation directly.
+Invalid JSON, unsupported versions,
 invalid FEN, unplayable moves and unavailable claims throw `JsonException`.
 Replay errors retain the original `FormatException` as their inner exception;
 move errors include their zero-based index. Null method arguments throw

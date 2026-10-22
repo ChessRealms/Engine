@@ -3,8 +3,17 @@ using System.Text.Json.Nodes;
 
 namespace ChessRealms.Engine.Tests.Json;
 
+[TestFixture(false)]
+[TestFixture(true)]
 internal class GameRecordJsonTests
 {
+    private readonly bool restoreDirectly;
+
+    public GameRecordJsonTests(bool restoreDirectly)
+    {
+        this.restoreDirectly = restoreDirectly;
+    }
+
     private const string RepetitionCycle = "g1f3 g8f6 f3g1 f6g8";
     private const string RookEnding = "4k3/8/8/8/8/8/8/R3K3 w - - ";
 
@@ -21,7 +30,7 @@ internal class GameRecordJsonTests
     [Test]
     public void VersionOne_ImportsFixedFixtureAndExportsExpectedFields()
     {
-        var record = GameRecord.Deserialize(VersionOneRecord);
+        var record = DeserializeRecord(VersionOneRecord);
         using var document = JsonDocument.Parse(GameRecord.Serialize(record));
         var root = document.RootElement;
 
@@ -62,8 +71,9 @@ internal class GameRecordJsonTests
         var original = ChessGame.FromFen(fen);
         Play(original, moves);
 
-        var record = GameRecord.Deserialize(GameRecord.Serialize(original.ExportRecord()));
-        var restored = ChessGame.FromRecord(record);
+        string json = GameRecord.Serialize(original.ExportRecord());
+        var record = DeserializeRecord(json);
+        var restored = RestoreGame(json);
 
         Assert.That(record.InitialFen, Is.EqualTo(fen));
         AssertEquivalent(original, restored);
@@ -96,9 +106,41 @@ internal class GameRecordJsonTests
         Assert.That(claimJson.GetProperty("reason").GetString(), Is.EqualTo(reasonText));
         Assert.That(claimJson.GetProperty("intendedMove").GetString(), Is.EqualTo(intendedMoveText));
 
-        var record = GameRecord.Deserialize(json);
+        var record = DeserializeRecord(json);
         Assert.That(record.DrawClaim, Is.EqualTo(new DrawClaimRecord(reason, intendedMove)));
-        AssertEquivalent(original, ChessGame.FromRecord(record));
+        var restored = RestoreGame(json);
+        AssertEquivalent(original, restored);
+        while (original.UndoMove())
+        {
+            Assert.That(restored.UndoMove(), Is.True);
+            AssertEquivalent(original, restored);
+        }
+
+        Assert.That(restored.UndoMove(), Is.False);
+    }
+
+    [Test]
+    public void Restore_ContinuesRepetitionWithIndependentGameOwnership()
+    {
+        var original = new ChessGame();
+        Play(original, RepetitionCycle);
+        string json = GameRecord.Serialize(original.ExportRecord());
+        var restored = RestoreGame(json);
+        var secondRestore = RestoreGame(json);
+
+        Assert.That(restored, Is.Not.SameAs(secondRestore));
+        Play(restored, RepetitionCycle);
+        Assert.That(restored.RepetitionCount, Is.EqualTo(3));
+        Assert.That(restored.AvailableDrawClaims, Is.EqualTo(DrawClaim.ThreefoldRepetition));
+        AssertEquivalent(original, secondRestore);
+
+        Assert.That(restored.UndoMove(), Is.True);
+        Assert.That(restored.GetAvailableDrawClaims(CoordinateMove.Parse("f6g8")),
+            Is.EqualTo(DrawClaim.ThreefoldRepetition));
+        Play(restored, "f6g8 " + RepetitionCycle + " " + RepetitionCycle);
+        Assert.That(restored.Outcome.Reason, Is.EqualTo(FinishReason.FivefoldRepetition));
+        Assert.That(GameRecord.Serialize(secondRestore.ExportRecord()), Is.EqualTo(json));
+        AssertEquivalent(original, secondRestore);
     }
 
     [Test]
@@ -108,7 +150,7 @@ internal class GameRecordJsonTests
             { "moves": [], "initialFen": "{{ChessGame.StartingFen}}", "schemaVersion": 1 }
             """;
 
-        var record = GameRecord.Deserialize(json);
+        var record = DeserializeRecord(json);
 
         Assert.That(record.Moves, Is.Empty);
         Assert.That(record.DrawClaim, Is.Null);
@@ -126,7 +168,7 @@ internal class GameRecordJsonTests
             }
             """;
 
-        var record = GameRecord.Deserialize(json);
+        var record = DeserializeRecord(json);
 
         Assert.That(record.DrawClaim, Is.EqualTo(new DrawClaimRecord(DrawClaim.FiftyMoveRule)));
     }
@@ -140,7 +182,7 @@ internal class GameRecordJsonTests
     [TestCase(VersionOneRecord + " {}")]
     public void Deserialize_RejectsInvalidRoot(string json)
     {
-        Assert.Throws<JsonException>(() => GameRecord.Deserialize(json));
+        Assert.Throws<JsonException>(() => DeserializeRecord(json));
     }
 
     [TestCase("schemaVersion")]
@@ -151,7 +193,7 @@ internal class GameRecordJsonTests
         var document = JsonNode.Parse(VersionOneRecord)!.AsObject();
         document.Remove(field);
 
-        Assert.Throws<JsonException>(() => GameRecord.Deserialize(document.ToJsonString()));
+        Assert.Throws<JsonException>(() => DeserializeRecord(document.ToJsonString()));
     }
 
     [TestCase("schemaVersion", "null")]
@@ -164,6 +206,7 @@ internal class GameRecordJsonTests
     [TestCase("initialFen", "null")]
     [TestCase("initialFen", "42")]
     [TestCase("initialFen", "\"not a FEN\"")]
+    [TestCase("initialFen", "\"8/8/8/8/8/8/8/8 w - - 0 1\"")]
     [TestCase("moves", "null")]
     [TestCase("moves", "\"e2e4\"")]
     [TestCase("moves", "[null]")]
@@ -189,7 +232,7 @@ internal class GameRecordJsonTests
         var document = JsonNode.Parse(VersionOneRecord)!;
         document[field] = JsonNode.Parse(value);
 
-        Assert.Throws<JsonException>(() => GameRecord.Deserialize(document.ToJsonString()));
+        Assert.Throws<JsonException>(() => DeserializeRecord(document.ToJsonString()));
     }
 
     [TestCase("\"reason\":\"fiftyMoveRule\",\"extra\":true")]
@@ -206,7 +249,7 @@ internal class GameRecordJsonTests
             }
             """;
 
-        Assert.Throws<JsonException>(() => GameRecord.Deserialize(json));
+        Assert.Throws<JsonException>(() => DeserializeRecord(json));
     }
 
     [TestCase("schemaVersion", "1")]
@@ -218,7 +261,7 @@ internal class GameRecordJsonTests
     {
         string json = VersionOneRecord.Insert(1, $"\"{field}\":{value},");
 
-        Assert.Throws<JsonException>(() => GameRecord.Deserialize(json));
+        Assert.Throws<JsonException>(() => DeserializeRecord(json));
     }
 
     [TestCase("[\"e2e4\",\"d2d4\"]", 1)]
@@ -228,7 +271,7 @@ internal class GameRecordJsonTests
         var document = JsonNode.Parse(VersionOneRecord)!;
         document["moves"] = JsonNode.Parse(moves);
 
-        var error = Assert.Throws<JsonException>(() => GameRecord.Deserialize(document.ToJsonString()));
+        var error = Assert.Throws<JsonException>(() => DeserializeRecord(document.ToJsonString()));
 
         Assert.That(error!.Message, Does.Contain($"index {index}"));
         Assert.That(error.InnerException, Is.TypeOf<FormatException>());
@@ -238,8 +281,19 @@ internal class GameRecordJsonTests
     public void Methods_RejectNullArguments()
     {
         Assert.Throws<ArgumentNullException>(() => GameRecord.Serialize(null!));
-        Assert.Throws<ArgumentNullException>(() => GameRecord.Deserialize(null!));
+        var error = Assert.Throws<ArgumentNullException>(() => DeserializeRecord(null!));
+        Assert.That(error!.ParamName, Is.EqualTo("json"));
     }
+
+    // Apply the same JSON contract cases to both public entry points. Game tests
+    // use the directly returned instance, so export/replay cannot hide missing state.
+    private GameRecord DeserializeRecord(string json) => restoreDirectly
+        ? ChessGame.FromRecordJson(json).ExportRecord()
+        : GameRecord.Deserialize(json);
+
+    private ChessGame RestoreGame(string json) => restoreDirectly
+        ? ChessGame.FromRecordJson(json)
+        : ChessGame.FromRecord(GameRecord.Deserialize(json));
 
     private static void Play(ChessGame game, string moves)
     {

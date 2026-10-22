@@ -103,7 +103,30 @@ if (piece != new ChessPiece(PieceColor.White, PieceValue.Pawn))
     throw new InvalidOperationException("The white pawn was not found on e4.");
 }
 
+Span<char> fen = stackalloc char[128];
+if (!game.TryFormatFen(fen, out int fenWritten) || !fen[..fenWritten].SequenceEqual(game.ToFen()))
+{
+    throw new InvalidOperationException("The package consumer could not format FEN into a span.");
+}
+
+if (game.PlyCount != 1 || game.GetFenAtPly(0) != ChessGame.StartingFen
+    || game.GetFenAtPly(1) != game.ToFen()
+    || !game.TryFormatFenAtPly(0, fen, out fenWritten)
+    || !fen[..fenWritten].SequenceEqual(ChessGame.StartingFen))
+{
+    throw new InvalidOperationException("The package consumer could not read historical FEN.");
+}
+
+var history = game.History;
+
 game.UndoMove();
+
+if (game.PlyCount != 0 || game.GetFenAtPly(0) != ChessGame.StartingFen
+    || history.Count != 1 || history[0].FenAfter == game.ToFen()
+    || game.TryFormatFenAtPly(1, fen, out fenWritten) || fenWritten != 0)
+{
+    throw new InvalidOperationException("Historical FEN or snapshot ownership failed after undo.");
+}
 
 if (game.FormatSan(move) != "e4" || game.ParseSan("e4") != move)
 {
@@ -125,6 +148,24 @@ if (game.MakeSanMove("e4+") != MoveResult.None || game.MakeSanMove("e4") == Move
 }
 
 game.MakeSanMove("e4");
+string recordJson = GameRecord.Serialize(game.ExportRecord());
+var restored = ChessGame.FromRecordJson(recordJson);
+if (restored.ToFen() != game.ToFen() || restored.PlyCount != 1
+    || !restored.UndoMove() || restored.ToFen() != ChessGame.StartingFen
+    || game.PlyCount != 1)
+{
+    throw new InvalidOperationException("The package consumer could not restore record JSON with independent undo.");
+}
+
+try
+{
+    ChessGame.FromRecordJson(recordJson.Replace("e2e4", "e2e5"));
+    throw new InvalidOperationException("Invalid record JSON did not throw.");
+}
+catch (System.Text.Json.JsonException exception) when (exception.InnerException is FormatException)
+{
+}
+
 var document = PgnGame.FromGame(game,
     new Dictionary<string, string> { ["Event"] = "Package smoke test" }, PgnResult.WhiteWin);
 using var writer = new StringWriter();

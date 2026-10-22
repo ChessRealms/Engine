@@ -24,6 +24,7 @@ public sealed class GameRecord
     public static string Serialize(GameRecord record) => GameRecordJsonSerializer.Serialize(record);
 
     /// <summary>Deserializes a game record and validates it by replaying its moves and draw claim.</summary>
+    /// <remarks>Use <see cref="ChessGame.FromRecordJson"/> when a playable game is needed directly.</remarks>
     /// <exception cref="ArgumentNullException">The JSON string is null.</exception>
     /// <exception cref="System.Text.Json.JsonException">The JSON is invalid, its schema is unsupported,
     /// or the game cannot be restored.</exception>

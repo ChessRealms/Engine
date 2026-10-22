@@ -2,6 +2,7 @@ using ChessRealms.Engine.Core.Constants;
 using ChessRealms.Engine.Core.Math;
 using ChessRealms.Engine.Core.Movements;
 using ChessRealms.Engine.Core.Types;
+using ChessRealms.Engine.Json;
 using ChessRealms.Engine.Parsing;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -16,7 +17,7 @@ public sealed partial class ChessGame
 
     private Position position;
     private readonly string initialFen;
-    private readonly List<MoveHistoryEntry> history = [];
+    private readonly List<RecordedMove> history = [];
     private readonly List<Position> undo = [];
     private readonly List<string> keys = [];
     private readonly Dictionary<string, int> repetitions = new(StringComparer.Ordinal);
@@ -48,7 +49,12 @@ public sealed partial class ChessGame
     }
 
     public int RepetitionCount => repetitions[keys[^1]];
-    public IReadOnlyList<MoveHistoryEntry> History => Array.AsReadOnly(history.ToArray());
+
+    /// <summary>The number of recorded half-moves since the initial position, excluding undone moves.</summary>
+    public int PlyCount => history.Count;
+
+    /// <summary>An independent read-only snapshot of moves, their before/after FEN and move flags.</summary>
+    public IReadOnlyList<MoveHistoryEntry> History => CopyHistory();
     public DrawClaim AvailableDrawClaims => IsFinished
         ? DrawClaim.None
         : CalculateDrawClaims(position, RepetitionCount);
@@ -90,7 +96,16 @@ public sealed partial class ChessGame
     }
 
     public ChessGame Clone() => new(this);
-    public string ToFen() => history.Count == 0 ? initialFen : history[^1].FenAfter;
+
+    /// <summary>Gets the current position's canonical FEN, formatting and caching it on first request.</summary>
+    public string ToFen() => GetFenAtPly(history.Count);
+
+    /// <summary>Writes the current position as canonical FEN without creating a string.</summary>
+    /// <remarks>Does not change the game. If the destination is too small, returns false with zero
+    /// characters written and leaves the destination unchanged. Move counters have arbitrary precision,
+    /// so there is no fixed maximum FEN length. Also works after the game finishes.</remarks>
+    public bool TryFormatFen(Span<char> destination, out int charsWritten)
+        => FenStrings.TryFormatUnchecked(position, destination, out charsWritten);
 
     /// <summary>Exports an independent snapshot of the starting position, current move line and draw claim.</summary>
     public GameRecord ExportRecord() => GameRecord.CreateFromGame(this);
@@ -115,6 +130,14 @@ public sealed partial class ChessGame
     /// <exception cref="ArgumentNullException">The record is null.</exception>
     /// <exception cref="FormatException">The initial FEN, a recorded move or the draw claim is invalid.</exception>
     public static ChessGame FromRecord(GameRecord gameRecord) => GameRecord.RestoreGame(gameRecord);
+
+    /// <summary>Restores an independent game from versioned game-record JSON, validating and replaying it once.</summary>
+    /// <remarks>Accepts the format written by <see cref="GameRecord.Serialize"/>. Rebuilds history,
+    /// repetition counts, outcome and undo, including a draw claim's unplayed intended move.</remarks>
+    /// <exception cref="ArgumentNullException">The JSON string is null.</exception>
+    /// <exception cref="System.Text.Json.JsonException">The JSON is invalid, its schema is unsupported,
+    /// or the game cannot be restored. Replay errors retain their original FormatException as the inner exception.</exception>
+    public static ChessGame FromRecordJson(string json) => GameRecordJsonSerializer.DeserializeGame(json);
 
     /// <summary>Copies the board in a1-to-h8 order.</summary>
     public void CopyBoardTo(Span<ChessPiece> destination)
@@ -222,7 +245,7 @@ public sealed partial class ChessGame
             result |= MoveResult.Stalemate;
         }
 
-        var entry = new MoveHistoryEntry(move, ToFen(), FenStrings.FormatUnchecked(nextPosition), result);
+        var entry = new RecordedMove(move, result);
         undo.Add(position);
         history.Add(entry);
         keys.Add(key);

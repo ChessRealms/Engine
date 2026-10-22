@@ -33,7 +33,7 @@ public class PgnBenchmarks
         }
     }
 
-    private static CoordinateMove[] CreateLongLine()
+    internal static CoordinateMove[] CreateLongLine()
     {
         // Use the same 120-ply fixture prefix for every size. Reject short games
         // during setup instead of accidentally measuring fewer plies than advertised.

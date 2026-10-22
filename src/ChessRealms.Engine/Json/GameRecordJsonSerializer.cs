@@ -30,7 +30,11 @@ internal static class GameRecordJsonSerializer
         return JsonSerializer.Serialize(document, Options);
     }
 
-    internal static GameRecord Deserialize(string json)
+    internal static GameRecord Deserialize(string json) => DeserializeValidated(json).Record;
+
+    internal static ChessGame DeserializeGame(string json) => DeserializeValidated(json).Game;
+
+    private static (GameRecord Record, ChessGame Game) DeserializeValidated(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
 
@@ -45,14 +49,12 @@ internal static class GameRecordJsonSerializer
         try
         {
             // Replay is the authority for move legality and draw claims, including intended moves.
-            GameRecord.RestoreGame(record);
+            return (record, GameRecord.RestoreGame(record));
         }
         catch (FormatException ex)
         {
             throw new JsonException(ex.Message, ex);
         }
-
-        return record;
     }
 
     private readonly record struct GameRecordDocument
