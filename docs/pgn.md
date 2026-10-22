@@ -138,6 +138,12 @@ string. `ToGame()` performs a replay each time, so keep the returned game when
 you need to continue using it. Coordinate-based move application pays no PGN
 processing cost.
 
+Export advances one position through the validated mainline, sharing legal-move
+generation and SAN formatting with `ChessGame`. It does not build another game
+history, undo stack or repetition dictionary. Move numbers use span formatting
+with a string fallback for unusually large counters. Parsing the initial FEN,
+ordering tags and storing output can still allocate.
+
 Tests cover model ownership, result conflicts, custom FEN/counters, escaping,
 canonical output, structured diagnostics, unsupported features, special moves,
 automatic endings and deterministic game round trips through undo. The package

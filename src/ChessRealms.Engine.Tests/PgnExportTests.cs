@@ -56,6 +56,24 @@ internal class PgnExportTests
         }
     }
 
+    [TestCase(29)]
+    [TestCase(30)]
+    [TestCase(80)]
+    public void MoveNumbers_PreserveAllDigitsAcrossFormattingBufferAndLineBoundaries(int digits)
+    {
+        string number = new('9', digits);
+        var game = ChessGame.FromFen($"7k/8/8/8/8/8/8/R6K b - - 0 {number}");
+        game.MakeSanMove("Kg8");
+        game.MakeSanMove("Ra2");
+        var document = PgnGame.FromGame(game);
+        string text = document.ToPgn();
+        string movetext = text[(text.IndexOf("\n\n", StringComparison.Ordinal) + 2)..];
+        Assert.That(movetext.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries),
+            Is.EqualTo(new[] { number + "...", "Kg8", "1" + new string('0', digits) + ".", "Ra2", "*" }));
+        Assert.That(PgnGame.Parse(text).ToGame().ToFen(), Is.EqualTo(game.ToFen()));
+        Assert.That(document.ToPgn(), Is.EqualTo(text));
+    }
+
     [TestCase("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1", "O-O", "*")]
     [TestCase("7k/8/8/3pP3/8/8/8/7K w - d6 0 1", "exd6", "*")]
     [TestCase("7k/P7/8/8/8/8/8/7K w - - 0 1", "a8=N", "1/2-1/2")]

@@ -254,6 +254,9 @@ compares placement, side to move, castling rights and the en passant square
 only when a *legal* en passant capture exists; move counters are ignored. A
 pinned pawn does not make en passant available for this purpose.
 
+The [repetition guide](repetition.md) explains position identity, counting,
+undo, hash collisions and why restoring counts requires the game line.
+
 Dead-position detection covers king versus king, king plus one bishop or knight
 versus king, and bishops-only positions where every bishop is on the same
 square color. It does not attempt general dead-position proof, including
